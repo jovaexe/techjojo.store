@@ -162,7 +162,7 @@ function buildEmojiSpecs(p, headers) {
       : /laptop|notebook/i.test(cat)
       ? "💻"
       : /accessor/i.test(cat)
-      ? "🎯"
+      ? "🖱️"
       : "🧩";
     lines.unshift({ icon: catIcon, label: cat, text: "" });
   }

@@ -97,7 +97,7 @@ function buildEmojiSpecs(p, headers) {
   }
   if (H.category && hasValue(p[H.category])) {
     const cat = String(p[H.category]);
-    const catIcon = /monitor/i.test(cat) ? "🖥" : /desktop/i.test(cat) ? "🖥" : /laptop|notebook/i.test(cat) ? "💻" : /accessor/i.test(cat) ? "🎯" : "🧩";
+    const catIcon = /monitor/i.test(cat) ? "🖥" : /desktop/i.test(cat) ? "🖥" : /laptop|notebook/i.test(cat) ? "💻" : /accessor/i.test(cat) ? "🖱️" : "🧩";
     lines.unshift({ icon: catIcon, label: cat, text: "" });
   }
   return lines;
