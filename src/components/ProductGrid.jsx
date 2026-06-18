@@ -58,7 +58,8 @@ function specIconFor(header, value) {
   if (["gpu", "graphics", "video"].some((k) => h.includes(k))) return "🎮";
   if (["keyboard"].some((k) => h.includes(k))) return "⌨";
   if (["cellular", "network", "sim", "esim", "carrier"].some((k) => h.includes(k))) return "📶";
-  if (["connectivity", "wifi", "bluetooth", "ports"].some((k) => h.includes(k))) return "🔌";
+  if (["ports"].some((k) => h.includes(k))) return "🔌";
+  if (["connectivity", "wifi", "bluetooth"].some((k) => h.includes(k))) return "📶";
   if (["refresh", "hz", "response"].some((k) => h.includes(k))) return "🎮";
   if (["adjustments", "adjustment", "tilt", "swivel", "pivot", "height"].some((k) => h.includes(k))) return "🔧";
   if (["lock", "kensington", "security"].some((k) => h.includes(k))) return "🔒";
@@ -92,7 +93,8 @@ function buildEmojiSpecs(p, headers) {
     gpu: findHeader(headers, ["gpu", "graphics", "graphics card", "video"]),
     keyboard: findHeader(headers, ["keyboard", "backlit", "keyboard type"]),
     refresh: findHeader(headers, ["refresh rate", "hz", "response time"]),
-    connectivity: findHeader(headers, ["connectivity", "wifi", "bluetooth", "ports", "network"]),
+    connectivity: findHeader(headers, ["connectivity", "wifi", "bluetooth"]),
+    ports: findHeader(headers, ["ports", "port"]),
     adjustments: findHeader(headers, ["adjustments", "height", "tilt", "swivel", "pivot"]),
     security: findHeader(headers, ["security", "fingerprint", "tpm", "smart card", "camera shutter"]),
     lock: findHeader(headers, ["lock", "kensington lock", "kensington lock slot"]),
@@ -115,6 +117,7 @@ function buildEmojiSpecs(p, headers) {
     "gpu",
     "keyboard",
     "connectivity",
+    "ports",
     "refresh",
     // NEW: accessories-specific details
     "special_features",
