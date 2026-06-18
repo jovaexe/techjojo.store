@@ -1008,9 +1008,7 @@ export default function ProductGrid({
             <div key={i} className="flex items-start gap-1.5 text-[12px]">
               <span aria-hidden>{spec.icon}</span>
               <span className="font-medium">{spec.label}:</span>
-              <span className="text-gray-600 dark:text-gray-400">
-                {formatApplianceValue(spec.value)}
-              </span>
+              <span className="font-semibold text-gray-600 dark:text-gray-400">{formatApplianceValue(spec.value)}</span>
             </div>
           ))}
         </div>
@@ -1026,7 +1024,7 @@ export default function ProductGrid({
         {text ? (
           <>
             {label.endsWith(":") ? " " : ": "}
-            <span className="text-gray-600 dark:text-gray-400">{text}</span>
+            <span className="font-semibold text-gray-600 dark:text-gray-400">{text}</span>
           </>
         ) : null}
       </div>

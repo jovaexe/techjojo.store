@@ -356,8 +356,8 @@ export default function SearchPage() {
                                 {buildApplianceSpecs(p._raw, p._headers).map((spec, si) => (
                                   <div key={si} className="flex items-start gap-1.5 text-[12px]">
                                     <span aria-hidden>{spec.icon}</span>
-                                    <span className="font-medium">{spec.label}:</span>
-                                    <span className="text-gray-600 dark:text-gray-400">{formatApplianceValue(spec.value)}</span>
+                                     <span className="font-medium">{spec.label}:</span>
+                                     <span className="font-semibold text-gray-600 dark:text-gray-400">{formatApplianceValue(spec.value)}</span>
                                   </div>
                                 ))}
                               </div>
@@ -366,9 +366,9 @@ export default function SearchPage() {
                         {buildEmojiSpecs(p._raw, p._headers).map(({ icon, label, text }, si) => (
                           <div key={si} className="flex items-start gap-1.5">
                             <span className="shrink-0 leading-5" aria-hidden>{icon}</span>
-                            <div className="leading-5">
+                             <div className="leading-5">
                               {label}
-                              {text ? <>{label.endsWith(":") ? " " : ": "}<span className="text-gray-600 dark:text-gray-400">{text}</span></> : null}
+                              {text ? <>{label.endsWith(":") ? " " : ": "}<span className="font-semibold text-gray-600 dark:text-gray-400">{text}</span></> : null}
                             </div>
                           </div>
                         ))}
