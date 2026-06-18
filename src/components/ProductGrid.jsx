@@ -69,6 +69,7 @@ function specIconFor(header, value) {
 
   // NEW: gaming accessories extras
   if (["special_features", "special features", "features"].some((k) => h.includes(k))) return "✨";
+  if (["cellular", "network", "sim", "esim", "carrier"].some((k) => h.includes(k))) return "📶";
   if (["build", "build quality", "material"].some((k) => h.includes(k))) return "🛠";
 
   // value-based fallback hints
@@ -102,6 +103,7 @@ function buildEmojiSpecs(p, headers) {
     referral: findHeader(headers, ["referral bonus", "referral"]),
     // NEW: gaming accessories
     special_features: findHeader(headers, ["special_features", "special features", "features"]),
+    cellular: findHeader(headers, ["cellular", "network", "sim", "esim", "carrier"]),
     build: findHeader(headers, ["build", "build quality", "material"]),
   };
 
@@ -116,6 +118,7 @@ function buildEmojiSpecs(p, headers) {
     "refresh",
     // NEW: accessories-specific details
     "special_features",
+    "cellular",
     "build",
     // misc
     "adjustments",

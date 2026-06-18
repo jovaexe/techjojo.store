@@ -51,6 +51,7 @@ function specIconFor(header, value) {
   if (["delivery", "shipping"].some((k) => h.includes(k))) return "🚚";
   if (["referral"].some((k) => h.includes(k))) return "💰";
   if (["special_features", "special features", "features"].some((k) => h.includes(k))) return "✨";
+  if (["cellular", "network", "sim", "esim", "carrier"].some((k) => h.includes(k))) return "📶";
   if (["build", "build quality", "material"].some((k) => h.includes(k))) return "🛠";
   const s = cleanOne(value).toLowerCase();
   if (s.includes("free shipping")) return "🚚";
@@ -79,9 +80,10 @@ function buildEmojiSpecs(p, headers) {
     delivery: findHeader(headers, ["delivery", "shipping"]),
     referral: findHeader(headers, ["referral bonus", "referral"]),
     special_features: findHeader(headers, ["special_features", "special features", "features"]),
+    cellular: findHeader(headers, ["cellular", "network", "sim", "esim", "carrier"]),
     build: findHeader(headers, ["build", "build quality", "material"]),
   };
-  const order = ["display", "cpu", "ram", "storage", "gpu", "keyboard", "connectivity", "refresh", "special_features", "build", "adjustments", "security", "lock", "battery", "condition", "bundle", "delivery", "referral"];
+  const order = ["display", "cpu", "ram", "storage", "gpu", "keyboard", "connectivity", "refresh", "special_features", "cellular", "build", "adjustments", "security", "lock", "battery", "condition", "bundle", "delivery", "referral"];
   const lines = [];
   for (const key of order) {
     const header = H[key];

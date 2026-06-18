@@ -58,6 +58,11 @@ export default function SmartphoneFilters(props) {
       aliases: ["special features"],
     },
     {
+      key: "cellular",
+      label: "Cellular",
+      aliases: ["network", "sim", "esim", "carrier"],
+    },
+    {
       key: "security",
       label: "Security",
       aliases: ["face id", "biometrics"],
