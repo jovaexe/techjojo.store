@@ -90,7 +90,7 @@ function buildEmojiSpecs(p, headers) {
     if (!hasValue(v)) continue;
     const val = Array.isArray(v) ? v.join(", ") : String(v);
     const icon = specIconFor(header, val);
-    const label = key === "refresh" ? "Refresh Rate" : key === "lock" ? "Security" : key === "cpu" ? "Processor" : key === "ram" ? "RAM" : key === "special_features" ? "Features" : key === "build" ? "Build" : header.charAt(0).toUpperCase() + header.slice(1);
+    const label = key === "refresh" ? "Refresh Rate" : key === "lock" ? "Security" : key === "cpu" ? "Processor" : key === "ram" ? "RAM" : key === "gpu" ? "GPU" : key === "special_features" ? "Features" : key === "build" ? "Build" : header.charAt(0).toUpperCase() + header.slice(1);
     lines.push({ icon, label, text: val });
   }
   if (H.category && hasValue(p[H.category])) {

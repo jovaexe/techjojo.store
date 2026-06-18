@@ -142,6 +142,7 @@ function buildEmojiSpecs(p, headers) {
       : key === "lock" ? "Security"
       : key === "cpu" ? "Processor"
       : key === "ram" ? "RAM"
+      : key === "gpu" ? "GPU"
       : key === "special_features" ? "Features"
       : key === "build" ? "Build"
       : header.charAt(0).toUpperCase() + header.slice(1);
