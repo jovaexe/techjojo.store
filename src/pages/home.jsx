@@ -4,7 +4,7 @@ import { ArrowRight, Laptop, Smartphone, Cable , Gamepad2, TvIcon, Laptop2, Refr
 function Card({ children, className = "" }) {
   return (
     <div
-      className={"rounded-2xl border bg-white shadow-sm " + "dark:bg-neutral-900 dark:border-neutral-800 " + className}
+      className={"rounded-2xl border bg-gray-100 shadow-sm " + "dark:bg-neutral-900 dark:border-neutral-800 " + className}
     >
       {children}
     </div>

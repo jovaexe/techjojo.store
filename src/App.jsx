@@ -1,4 +1,5 @@
 
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Analytics } from "@vercel/analytics/react";
 import Home from "./pages/home";
@@ -15,8 +16,12 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import HomeAppliance from './pages/homeappliances'
 import Smartphones from "./pages/smartphone";
+import SearchPage from "./pages/search";
+import { preloadAllProducts } from "./lib/productCache";
 
 export default function App() {
+  useEffect(() => { preloadAllProducts(); }, []);
+
   return (
     <ThemeProvider>
       <BrowserRouter>
@@ -35,6 +40,7 @@ export default function App() {
                <Route path="/techaccessories" element={<Techaccessories />} />
                <Route path="/homeappliances" element={<HomeAppliance />} />
                <Route path="/smartphones" element={<Smartphones />} />
+               <Route path="/search" element={<SearchPage />} />
               <Route path="*" element={<PageNotFound />} />
             </Routes>
           </main>

@@ -746,7 +746,7 @@ export default function ProductGrid({
   // numbered pagination window (with ellipses)
   const pageItems = useMemo(() => {
     const items = [];
-    const siblings = 1;
+    const siblings = 2;
     const boundaries = 1;
     if (pages <= 1) return [1];
 
