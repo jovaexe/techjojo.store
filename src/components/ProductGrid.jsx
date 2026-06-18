@@ -52,7 +52,7 @@ function specIconFor(header, value) {
   const h = header.toLowerCase();
   // prefer header-based mapping; fall back to value keywords if needed
   if (["display", "screen", "screen size", "panel"].some((k) => h.includes(k))) return "🖥";
-  if (["cpu", "processor", "chip"].some((k) => h.includes(k))) return "💻";
+  if (["cpu", "processor", "chip"].some((k) => h.includes(k))) return "⚙️";
   if (["ram", "memory"].some((k) => h.includes(k))) return "🧠";
   if (["storage", "ssd", "hdd", "drive", "disk"].some((k) => h.includes(k))) return "💾";
   if (["gpu", "graphics", "video"].some((k) => h.includes(k))) return "🎮";
@@ -140,9 +140,11 @@ function buildEmojiSpecs(p, headers) {
     const label =
       key === "refresh" ? "Refresh Rate"
       : key === "lock" ? "Security"
-      : key === "special_features" ? "Special Features"
+      : key === "cpu" ? "Processor"
+      : key === "ram" ? "RAM"
+      : key === "special_features" ? "Features"
       : key === "build" ? "Build"
-      : header;
+      : header.charAt(0).toUpperCase() + header.slice(1);
 
     lines.push({ icon, label, text: val });
   }
