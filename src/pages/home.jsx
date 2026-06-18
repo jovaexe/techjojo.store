@@ -53,6 +53,14 @@ const tiles = [
     Icon: Cable,
     accent: "from-amber-500/20 to-amber-500/0 dark:from-amber-400/10 dark:to-transparent",
   },
+ {
+    to: "/smartphones",
+    title: "smartphones",
+    subtitle: "Apple • Samsung • Motorola",
+    Icon: Smartphone,
+    accent:
+      "from-neutral-700/20 to-neutral-700/0 dark:from-neutral-300/10 dark:to-transparent",
+  },
   {
     to: "/monitors",
     title: "monitors",
@@ -75,20 +83,9 @@ const tiles = [
   subtitle: "Fridge • AC • TV",
   Icon: Refrigerator,
   accent: "from-cyan-500/20 to-teal-500/0 dark:from-cyan-400/10 dark:to-transparent",
-},
-
- {
-    to: "/smartphones",
-    title: "smartphones",
-    subtitle: "Apple • Samsung • Motorola",
-    Icon: Smartphone,
-    accent:
-      "from-neutral-700/20 to-neutral-700/0 dark:from-neutral-300/10 dark:to-transparent",
   },
-
-  
-
 ]
+
 
 export default function Home() {
   return (
