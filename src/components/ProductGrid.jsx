@@ -62,6 +62,7 @@ function specIconFor(header, value) {
   if (["adjustments", "adjustment", "tilt", "swivel", "pivot", "height"].some((k) => h.includes(k))) return "🔧";
   if (["lock", "kensington", "security"].some((k) => h.includes(k))) return "🔒";
   if (["condition"].some((k) => h.includes(k))) return "📦";
+  if (["battery", "battery health", "cycles"].some((k) => h.includes(k))) return "🔋";
   if (["bundle", "included", "extras"].some((k) => h.includes(k))) return "🎁";
   if (["delivery", "shipping"].some((k) => h.includes(k))) return "🚚";
   if (["referral"].some((k) => h.includes(k))) return "💰";
@@ -95,6 +96,7 @@ function buildEmojiSpecs(p, headers) {
     security: findHeader(headers, ["security", "fingerprint", "tpm", "smart card", "camera shutter"]),
     lock: findHeader(headers, ["lock", "kensington lock", "kensington lock slot"]),
     condition: findHeader(headers, ["condition"]),
+    battery: findHeader(headers, ["battery", "battery health", "battery capacity", "cycles"]),
     bundle: findHeader(headers, ["bundle", "included", "freebies", "extras"]),
     delivery: findHeader(headers, ["delivery", "shipping"]),
     referral: findHeader(headers, ["referral bonus", "referral"]),
@@ -120,6 +122,7 @@ function buildEmojiSpecs(p, headers) {
     "security",
     "lock",
     "condition",
+    "battery",
     "bundle",
     "delivery",
     "referral",

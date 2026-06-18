@@ -63,6 +63,11 @@ export default function SmartphoneFilters(props) {
       aliases: ["face id", "biometrics"],
     },
     {
+      key: "battery",
+      label: "Battery",
+      aliases: ["battery health", "battery capacity", "cycles"],
+    },
+    {
       key: "condition",
       label: "Condition",
       aliases: ["state"],
