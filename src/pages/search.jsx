@@ -41,7 +41,8 @@ function specIconFor(header, value) {
   if (["storage", "ssd", "hdd", "drive", "disk"].some((k) => h.includes(k))) return "💾";
   if (["gpu", "graphics", "video"].some((k) => h.includes(k))) return "🎮";
   if (["keyboard"].some((k) => h.includes(k))) return "⌨";
-  if (["connectivity", "wifi", "bluetooth", "ports", "network"].some((k) => h.includes(k))) return "📶";
+  if (["cellular", "network", "sim", "esim", "carrier"].some((k) => h.includes(k))) return "📶";
+  if (["connectivity", "wifi", "bluetooth", "ports"].some((k) => h.includes(k))) return "🔌";
   if (["refresh", "hz", "response"].some((k) => h.includes(k))) return "🎮";
   if (["adjustments", "adjustment", "tilt", "swivel", "pivot", "height"].some((k) => h.includes(k))) return "🔧";
   if (["lock", "kensington", "security"].some((k) => h.includes(k))) return "🔒";
@@ -51,7 +52,6 @@ function specIconFor(header, value) {
   if (["delivery", "shipping"].some((k) => h.includes(k))) return "🚚";
   if (["referral"].some((k) => h.includes(k))) return "💰";
   if (["special_features", "special features", "features"].some((k) => h.includes(k))) return "✨";
-  if (["cellular", "network", "sim", "esim", "carrier"].some((k) => h.includes(k))) return "📶";
   if (["build", "build quality", "material"].some((k) => h.includes(k))) return "🛠";
   const s = cleanOne(value).toLowerCase();
   if (s.includes("free shipping")) return "🚚";
