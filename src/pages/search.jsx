@@ -81,7 +81,7 @@ function buildEmojiSpecs(p, headers) {
     special_features: findHeader(headers, ["special_features", "special features", "features"]),
     build: findHeader(headers, ["build", "build quality", "material"]),
   };
-  const order = ["display", "cpu", "ram", "storage", "gpu", "keyboard", "connectivity", "refresh", "special_features", "build", "adjustments", "security", "lock", "condition", "battery", "bundle", "delivery", "referral"];
+  const order = ["display", "cpu", "ram", "storage", "gpu", "keyboard", "connectivity", "refresh", "special_features", "build", "adjustments", "security", "lock", "battery", "condition", "bundle", "delivery", "referral"];
   const lines = [];
   for (const key of order) {
     const header = H[key];
