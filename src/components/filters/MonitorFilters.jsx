@@ -20,9 +20,9 @@ export default function MonitorFilters(props) {
       aliases: ["hz", "refresh", "refresh rate", "refresh_ra"],
     },
     {
-      key: "connectivity",
-      label: "Connectivity",
-      aliases: ["ports", "inputs", "connectivi"],
+      key: "ports",
+      label: "Ports",
+      aliases: ["connectivity", "inputs", "connectivi"],
     },
     {
       key: "graphics_features",
