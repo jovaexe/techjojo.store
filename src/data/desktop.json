@@ -1,0 +1,54 @@
+[
+  {
+    "id": "desk-001",
+    "name": "ApexTower i5",
+    "brand": "NovaTech",
+    "category": "desktops",
+    "price": 459000,
+    "cpu": "Intel Core i5-12400",
+    "ram": "16GB DDR4",
+    "storage": "512GB NVMe SSD",
+    "gpu": "Intel UHD 730",
+    "img": "https://picsum.photos/seed/desk001/600/450",
+    "tags": ["tower", "office"]
+  },
+  {
+    "id": "desk-002",
+    "name": "RyzenForge 7",
+    "brand": "ZenCore",
+    "category": "desktops",
+    "price": 699000,
+    "cpu": "AMD Ryzen 7 5700G",
+    "ram": "32GB DDR4",
+    "storage": "1TB NVMe SSD",
+    "gpu": "Radeon Graphics",
+    "img": "https://picsum.photos/seed/desk002/600/450",
+    "tags": ["apu", "budget-creator"]
+  },
+  {
+    "id": "desk-003",
+    "name": "CreatorBox X",
+    "brand": "PixelWare",
+    "category": "desktops",
+    "price": 1250000,
+    "cpu": "Intel Core i7-13700",
+    "ram": "32GB DDR5",
+    "storage": "1TB NVMe + 2TB HDD",
+    "gpu": "NVIDIA RTX 4060",
+    "img": "https://picsum.photos/seed/desk003/600/450",
+    "tags": ["creator", "gpu"]
+  },
+  {
+    "id": "desk-004",
+    "name": "MiniCube S",
+    "brand": "LiteBox",
+    "category": "desktops",
+    "price": 289000,
+    "cpu": "Intel Core i3-12100",
+    "ram": "8GB DDR4",
+    "storage": "256GB NVMe SSD",
+    "gpu": "Intel UHD",
+    "img": "https://picsum.photos/seed/desk004/600/450",
+    "tags": ["mini-pc", "compact"]
+  }
+]

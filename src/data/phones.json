@@ -1,0 +1,67 @@
+[
+  {
+    "id": "phn-001",
+    "name": "NovaPhone X",
+    "brand": "NovaTech",
+    "category": "phones",
+    "price": 380000,
+    "cpu": "Snapdragon 8 Gen 1",
+    "ram": "8GB",
+    "storage": "128GB",
+    "gpu": "Adreno 730",
+    "img": "https://picsum.photos/seed/phn001/600/450",
+    "tags": ["android", "flagship", "5g"]
+  },
+  {
+    "id": "phn-002",
+    "name": "ZenCore One 5G",
+    "brand": "ZenCore",
+    "category": "phones",
+    "price": 250000,
+    "cpu": "MediaTek Dimensity 920",
+    "ram": "6GB",
+    "storage": "128GB",
+    "gpu": "Mali-G68",
+    "img": "https://picsum.photos/seed/phn002/600/450",
+    "tags": ["midrange", "android", "dual-sim"]
+  },
+  {
+    "id": "phn-003",
+    "name": "PixelWare Vision 13",
+    "brand": "PixelWare",
+    "category": "phones",
+    "price": 560000,
+    "cpu": "Apple A16 Bionic",
+    "ram": "6GB",
+    "storage": "256GB",
+    "gpu": "Apple GPU 5-core",
+    "img": "https://picsum.photos/seed/phn003/600/450",
+    "tags": ["ios", "flagship", "camera"]
+  },
+  {
+    "id": "phn-004",
+    "name": "LiteBox Mini S",
+    "brand": "LiteBox",
+    "category": "phones",
+    "price": 145000,
+    "cpu": "Snapdragon 680",
+    "ram": "4GB",
+    "storage": "64GB",
+    "gpu": "Adreno 610",
+    "img": "https://picsum.photos/seed/phn004/600/450",
+    "tags": ["budget", "compact"]
+  },
+  {
+    "id": "phn-005",
+    "name": "NovaPhone Ultra 5G",
+    "brand": "NovaTech",
+    "category": "phones",
+    "price": 720000,
+    "cpu": "Snapdragon 8 Gen 3",
+    "ram": "12GB",
+    "storage": "512GB",
+    "gpu": "Adreno 750",
+    "img": "https://picsum.photos/seed/phn005/600/450",
+    "tags": ["flagship", "gaming", "premium"]
+  }
+]

@@ -1,0 +1,67 @@
+[
+  {
+    "id": "tab-001",
+    "name": "NovaTab Pro 11",
+    "brand": "NovaTech",
+    "category": "tablets",
+    "price": 480000,
+    "cpu": "Snapdragon 8+ Gen 1",
+    "ram": "8GB",
+    "storage": "256GB",
+    "gpu": "Adreno 730",
+    "img": "https://picsum.photos/seed/tab001/600/450",
+    "tags": ["android", "stylus", "entertainment"]
+  },
+  {
+    "id": "tab-002",
+    "name": "ZenPad Air 10",
+    "brand": "ZenCore",
+    "category": "tablets",
+    "price": 320000,
+    "cpu": "MediaTek Dimensity 8100",
+    "ram": "6GB",
+    "storage": "128GB",
+    "gpu": "Mali-G610",
+    "img": "https://picsum.photos/seed/tab002/600/450",
+    "tags": ["midrange", "student", "reading"]
+  },
+  {
+    "id": "tab-003",
+    "name": "PixelWare Slate 12",
+    "brand": "PixelWare",
+    "category": "tablets",
+    "price": 610000,
+    "cpu": "Apple M2",
+    "ram": "8GB",
+    "storage": "256GB",
+    "gpu": "Apple GPU 10-core",
+    "img": "https://picsum.photos/seed/tab003/600/450",
+    "tags": ["ios", "premium", "creator"]
+  },
+  {
+    "id": "tab-004",
+    "name": "LiteBox Tab S7",
+    "brand": "LiteBox",
+    "category": "tablets",
+    "price": 210000,
+    "cpu": "Snapdragon 720G",
+    "ram": "4GB",
+    "storage": "64GB",
+    "gpu": "Adreno 618",
+    "img": "https://picsum.photos/seed/tab004/600/450",
+    "tags": ["budget", "kids", "portable"]
+  },
+  {
+    "id": "tab-005",
+    "name": "NovaTab Ultra 13",
+    "brand": "NovaTech",
+    "category": "tablets",
+    "price": 835000,
+    "cpu": "Snapdragon 8 Gen 3",
+    "ram": "16GB",
+    "storage": "1TB",
+    "gpu": "Adreno 750",
+    "img": "https://picsum.photos/seed/tab005/600/450",
+    "tags": ["flagship", "gaming", "stylus"]
+  }
+]

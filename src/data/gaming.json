@@ -1,0 +1,137 @@
+[
+  {
+    "id": "acc-001",
+    "name": "PulseWave Pro Headset",
+    "brand": "NovaTech",
+    "category": "gaming-accessories",
+    "price": 65000,
+    "img": "https://picsum.photos/seed/acc001/600/450",
+    "bundle": "Detachable mic, 3.5mm + USB adapter",
+    "delivery": "Free Nationwide Delivery",
+    "condition": "Brand New",
+    "tags": ["headset", "7.1-surround", "noise-cancelling", "wired"]
+  },
+  {
+    "id": "acc-002",
+    "name": "MechaKeys TKL",
+    "brand": "ZenCore",
+    "category": "gaming-accessories",
+    "price": 78000,
+    "img": "https://picsum.photos/seed/acc002/600/450",
+    "keyboard": "Mechanical (Blue Switches), RGB",
+    "bundle": "USB-C cable, keycap puller",
+    "delivery": "Free Nationwide Delivery",
+    "condition": "Brand New",
+    "tags": ["keyboard", "mechanical", "rgb", "tkl"]
+  },
+  {
+    "id": "acc-003",
+    "name": "Glide X Wireless Mouse",
+    "brand": "PixelWare",
+    "category": "gaming-accessories",
+    "price": 36000,
+    "img": "https://picsum.photos/seed/acc003/600/450",
+    "bundle": "2.4GHz receiver, USB-C charging cable",
+    "condition": "Brand New",
+    "tags": ["mouse", "wireless", "lightweight", "ergonomic", "dpi-16000"]
+  },
+  {
+    "id": "acc-004",
+    "name": "AeroPad XL Mouse Mat",
+    "brand": "LiteBox",
+    "category": "gaming-accessories",
+    "price": 12000,
+    "img": "https://picsum.photos/seed/acc004/600/450",
+    "bundle": "Anti-slip base",
+    "condition": "Brand New",
+    "tags": ["mousepad", "xl", "water-resistant", "stitched-edges"]
+  },
+  {
+    "id": "acc-005",
+    "name": "Nimbus Wireless Controller",
+    "brand": "NovaTech",
+    "category": "gaming-accessories",
+    "price": 45000,
+    "img": "https://picsum.photos/seed/acc005/600/450",
+    "bundle": "USB-C cable, 2.4GHz dongle",
+    "condition": "Brand New",
+    "tags": ["controller", "pc", "android", "wireless", "dual-vibration"]
+  },
+  {
+    "id": "acc-006",
+    "name": "StreamMate USB Microphone",
+    "brand": "ZenCore",
+    "category": "gaming-accessories",
+    "price": 85000,
+    "img": "https://picsum.photos/seed/acc006/600/450",
+    "bundle": "Shock mount, pop filter, desk stand",
+    "condition": "Brand New",
+    "tags": ["microphone", "usb", "streaming", "cardioid"]
+  },
+  {
+    "id": "acc-007",
+    "name": "ClearView 1080p/60 Webcam",
+    "brand": "PixelWare",
+    "category": "gaming-accessories",
+    "price": 60000,
+    "img": "https://picsum.photos/seed/acc007/600/450",
+    "bundle": "Privacy cover, tripod mount",
+    "condition": "Brand New",
+    "tags": ["webcam", "1080p60", "autofocus", "low-light"]
+  },
+  {
+    "id": "acc-008",
+    "name": "Capto 4K Capture Card",
+    "brand": "StreamLink",
+    "category": "gaming-accessories",
+    "price": 125000,
+    "img": "https://picsum.photos/seed/acc008/600/450",
+    "bundle": "USB-C cable, HDMI 2.0 cable",
+    "condition": "Brand New",
+    "tags": ["capture-card", "4k30", "1080p60", "streaming"]
+  },
+  {
+    "id": "acc-009",
+    "name": "RGB Flow Light Strip (2m)",
+    "brand": "LiteBox",
+    "category": "gaming-accessories",
+    "price": 18000,
+    "img": "https://picsum.photos/seed/acc009/600/450",
+    "bundle": "Remote, adhesive mounts",
+    "condition": "Brand New",
+    "tags": ["lighting", "rgb", "ambience", "usb-powered"]
+  },
+  {
+    "id": "acc-010",
+    "name": "ChargeDock Duo (Controller)",
+    "brand": "NovaTech",
+    "category": "gaming-accessories",
+    "price": 25000,
+    "img": "https://picsum.photos/seed/acc010/600/450",
+    "bundle": "2x battery packs, USB-C cable",
+    "condition": "Brand New",
+    "tags": ["dock", "charging", "controller", "dual-slot"]
+  },
+  {
+    "id": "acc-011",
+    "name": "AeroCool Laptop Cooling Pad",
+    "brand": "ZenCore",
+    "category": "gaming-accessories",
+    "price": 32000,
+    "img": "https://picsum.photos/seed/acc011/600/450",
+    "bundle": "Dual 140mm fans, adjustable stand",
+    "condition": "Brand New",
+    "tags": ["cooling-pad", "laptop", "rgb", "adjustable"]
+  },
+  {
+    "id": "acc-012",
+    "name": "SwiftDrive Portable SSD 1TB",
+    "brand": "PixelWare",
+    "category": "gaming-accessories",
+    "price": 145000,
+    "img": "https://picsum.photos/seed/acc012/600/450",
+    "bundle": "USB-C to C & USB-C to A cables",
+    "condition": "Brand New",
+    "tags": ["external-ssd", "usb-3.2", "fast-load", "portable"]
+  }
+]
