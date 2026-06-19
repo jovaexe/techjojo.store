@@ -579,6 +579,32 @@ export default function ProductGrid({
     }
   }, [title]);
 
+  // Right-click / long-press context menu
+  const [ctxMenu, setCtxMenu] = useState(null);
+  const longPressTimer = useRef(null);
+
+  const showCtxMenu = useCallback((e, p) => {
+    e.preventDefault();
+    setCtxMenu({ x: e.clientX, y: e.clientY, el: e.currentTarget, name: p.__name });
+  }, []);
+
+  const longPressStart = useCallback((e, p) => {
+    longPressTimer.current = setTimeout(() => {
+      setCtxMenu({ x: e.touches[0].clientX, y: e.touches[0].clientY, el: e.currentTarget, name: p.__name });
+    }, 500);
+  }, []);
+
+  const longPressEnd = useCallback(() => {
+    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+  }, []);
+
+  useEffect(() => {
+    if (!ctxMenu) return;
+    const dismiss = () => setCtxMenu(null);
+    window.addEventListener("click", dismiss, { once: true });
+    return () => window.removeEventListener("click", dismiss);
+  }, [ctxMenu]);
+
   // Normalize each row & compute helpers
   const sourceItems = useMemo(() => {
     const result = (activeRows || []).map((row) => {
@@ -1023,6 +1049,10 @@ export default function ProductGrid({
               <Card
                 key={p.__id}
                 className="flex h-full flex-col overflow-hidden transition hover:shadow-lg"
+                onContextMenu={(e) => showCtxMenu(e, p)}
+                onTouchStart={(e) => longPressStart(e, p)}
+                onTouchEnd={longPressEnd}
+                onTouchMove={longPressEnd}
               >
                 <div className="relative w-full overflow-hidden">
                   <button
@@ -1196,6 +1226,16 @@ export default function ProductGrid({
           </nav>
         </div>
       </section>
+
+      {ctxMenu && (
+        <div
+          className="fixed z-50 rounded-lg border bg-white px-3 py-2 text-xs font-medium shadow-lg dark:border-neutral-700 dark:bg-neutral-900 dark:text-gray-200 cursor-pointer hover:bg-gray-100 dark:hover:bg-neutral-800"
+          style={{ left: ctxMenu.x, top: ctxMenu.y }}
+          onClick={() => { saveCardAsImage(ctxMenu.el, ctxMenu.name); setCtxMenu(null); }}
+        >
+          📷 Save as image
+        </div>
+      )}
     </main>
   );
 }
