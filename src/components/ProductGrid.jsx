@@ -567,7 +567,16 @@ export default function ProductGrid({
     try {
       const card = el.closest(".rounded-2xl");
       if (!card) return;
-      const canvas = await html2canvas(card, { scale: 2, useCORS: true, backgroundColor: null });
+      const clone = card.cloneNode(true);
+      clone.style.borderRadius = "0";
+      clone.style.width = card.offsetWidth + "px";
+      clone.style.position = "fixed";
+      clone.style.left = "-9999px";
+      clone.style.top = "0";
+      document.body.appendChild(clone);
+      await new Promise((r) => setTimeout(r, 50));
+      const canvas = await html2canvas(clone, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
+      document.body.removeChild(clone);
       const slug = title.replace(/\s+/g, "").toLowerCase();
       const url = slug ? `www.techjojo.store/${slug}` : "www.techjojo.store";
       const link = document.createElement("a");
@@ -1054,7 +1063,7 @@ export default function ProductGrid({
                 onTouchEnd={longPressEnd}
                 onTouchMove={longPressEnd}
               >
-                <div className="relative w-full overflow-hidden">
+                <div className="w-full overflow-hidden">
                   <button
                     type="button"
                     onClick={() => {
@@ -1069,14 +1078,6 @@ export default function ProductGrid({
                       src={p.__img !== "-" ? p.__img : ""}
                       alt={p.__name}
                     />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={(e) => saveCardAsImage(e.target, p.__name)}
-                    className="absolute bottom-1.5 right-1.5 flex h-7 w-7 items-center justify-center rounded-md bg-white/80 text-xs shadow backdrop-blur-sm hover:bg-white dark:bg-neutral-800/80 dark:hover:bg-neutral-700"
-                    title="Save as image"
-                  >
-                    ⬇️
                   </button>
                 </div>
 
