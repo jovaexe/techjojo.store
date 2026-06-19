@@ -1,8 +1,9 @@
 // src/components/ProductGrid.jsx
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import ThemeToggle from "./ThemeToggle";
 import PriceSlider from "./filters/PriceSlider";
+import html2canvas from "html2canvas";
 
 // ===== Helpers =====
 function formatNaira(n) {
@@ -309,7 +310,7 @@ function splitCsvLine(line) {
 }
 
 /* -------------------- UI building blocks -------------------- */
-function Card({ children, className = "" }) {
+function Card({ children, className = "", ...rest }) {
   return (
     <div
       className={
@@ -318,6 +319,7 @@ function Card({ children, className = "" }) {
         " dark:border-neutral-800 dark:!bg-neutral-900 " +
         className
       }
+      {...rest}
     >
       {children}
     </div>
@@ -559,6 +561,47 @@ export default function ProductGrid({
   const topRef = useRef(null);
 
   const [filtersOpen, setFiltersOpen] = useState(false);
+
+  // Right-click / long-press → save card as image
+  const [ctxMenu, setCtxMenu] = useState(null);
+  const longPressTimer = useRef(null);
+
+  const saveCardAsImage = useCallback(async (el, name) => {
+    try {
+      const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: null });
+      const slug = title.replace(/\s+/g, "").toLowerCase();
+      const url = slug ? `www.techjojo.store/${slug}` : "www.techjojo.store";
+      const link = document.createElement("a");
+      link.download = `${name} ${url}.png`;
+      link.href = canvas.toDataURL();
+      link.click();
+    } catch (err) {
+      console.warn("Save image failed", err);
+    }
+  }, [title]);
+
+  const showCtxMenu = useCallback((e, p) => {
+    e.preventDefault();
+    setCtxMenu({ x: e.clientX, y: e.clientY, el: e.currentTarget, name: p.__name });
+  }, []);
+
+  const longPressStart = useCallback((e, p) => {
+    longPressTimer.current = setTimeout(() => {
+      setCtxMenu({ x: e.touches[0].clientX, y: e.touches[0].clientY, el: e.currentTarget, name: p.__name });
+    }, 500);
+  }, []);
+
+  const longPressEnd = useCallback(() => {
+    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+  }, []);
+
+  // Dismiss context menu on click elsewhere
+  useEffect(() => {
+    if (!ctxMenu) return;
+    const dismiss = () => setCtxMenu(null);
+    window.addEventListener("click", dismiss, { once: true });
+    return () => window.removeEventListener("click", dismiss);
+  }, [ctxMenu]);
 
   // Normalize each row & compute helpers
   const sourceItems = useMemo(() => {
@@ -1004,6 +1047,10 @@ export default function ProductGrid({
               <Card
                 key={p.__id}
                 className="flex h-full flex-col overflow-hidden transition hover:shadow-lg"
+                onContextMenu={(e) => showCtxMenu(e, p)}
+                onTouchStart={(e) => longPressStart(e, p)}
+                onTouchEnd={longPressEnd}
+                onTouchMove={longPressEnd}
               >
                 <div className="w-full overflow-hidden">
                   <button
@@ -1169,6 +1216,16 @@ export default function ProductGrid({
           </nav>
         </div>
       </section>
+
+      {ctxMenu && (
+        <div
+          className="fixed z-50 rounded-lg border bg-white px-3 py-2 text-xs font-medium shadow-lg dark:border-neutral-700 dark:bg-neutral-900 dark:text-gray-200 cursor-pointer hover:bg-gray-100 dark:hover:bg-neutral-800"
+          style={{ left: ctxMenu.x, top: ctxMenu.y }}
+          onClick={() => { saveCardAsImage(ctxMenu.el, ctxMenu.name); setCtxMenu(null); }}
+        >
+          📷 Save as image
+        </div>
+      )}
     </main>
   );
 }
