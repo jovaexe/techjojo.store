@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import ThemeToggle from "./ThemeToggle";
+import PriceSlider from "./filters/PriceSlider";
 
 // ===== Helpers =====
 function formatNaira(n) {
@@ -486,11 +487,6 @@ function parsePriceCell(input) {
   const m = s.match(/(\d+(\.\d+)?)/);
   return m ? Number(m[1]) : NaN;
 }
-function rangeFromLabel(lbl) {
-  const m = /(\d+)K–(\d+)K/.exec(String(lbl || ""));
-  if (!m) return null;
-  return [Number(m[1]) * 1000, Number(m[2]) * 1000];
-}
 
 function isApplianceProduct(p, headers) {
   // Detect by existence of appliance-related fields (most reliable)
@@ -619,7 +615,7 @@ export default function ProductGrid({
   // Build facets dynamically from headers (skip private/display-only fields)
   const facets = useMemo(() => {
     const out = {};
-    const skip = new Set(["id", "img", "image", "imageurl", "image_url"]);
+    const skip = new Set(["id", "img", "image", "imageurl", "image_url", "price", "amount", "cost", "ngn", "price (ngn)"]);
     const keys = headers.filter((h) => !skip.has(h.toLowerCase()));
 
     const maps = Object.fromEntries(keys.map((k) => [k, new Map()]));
@@ -646,17 +642,38 @@ export default function ProductGrid({
     return out;
   }, [headers, sourceItems]);
 
-  // Filters state mirrors headers (skip 'id', 'img'); keep synthetic price_range
+  // Price range for slider
+  const priceHeader = findHeader(headers, ["price", "amount", "cost", "ngn", "price (ngn)"]);
+  const { priceMin, priceMax } = useMemo(() => {
+    if (!priceHeader) return { priceMin: 0, priceMax: 1000000 };
+    let min = Infinity, max = -Infinity;
+    for (const row of sourceItems) {
+      const p = parsePriceCell(row[priceHeader]);
+      if (isFinite(p)) {
+        if (p < min) min = p;
+        if (p > max) max = p;
+      }
+    }
+    return { priceMin: isFinite(min) ? min : 0, priceMax: isFinite(max) ? max : 1000000 };
+  }, [sourceItems, priceHeader]);
+
+  const [sliderMin, setSliderMin] = useState(priceMin);
+  const [sliderMax, setSliderMax] = useState(priceMax);
+
+  useEffect(() => {
+    setSliderMin(priceMin);
+    setSliderMax(priceMax);
+  }, [priceMin, priceMax]);
+
+  // Filters state mirrors headers (skip 'id', 'img')
   const [filters, setFilters] = useState({});
   useEffect(() => {
-    const skip = new Set(["id", "img", "image", "imageurl", "image_url"]);
+    const skip = new Set(["id", "img", "image", "imageurl", "image_url", "price", "amount", "cost", "ngn", "price (ngn)"]);
     setFilters((prev) => {
       const next = {};
       headers.forEach((h) => {
         if (!skip.has(h.toLowerCase())) next[h] = prev[h] ?? "";
       });
-      // preserve synthetic filters
-      next.price_range = prev.price_range ?? "";
       return next;
     });
   }, [headers]);
@@ -664,46 +681,42 @@ export default function ProductGrid({
   const onSpecChange = (key, value) =>
     setFilters((f) => ({ ...f, [key]: cleanOne(value) }));
 
-  const clearSpecs = () =>
+  const clearSpecs = () => {
     setFilters((prev) => {
       const next = {};
       Object.keys(prev).forEach((k) => (next[k] = ""));
-      next.price_range = ""; // also clear synthetic price
       return next;
     });
+    setSliderMin(priceMin);
+    setSliderMax(priceMax);
+  };
 
-  // Active filters count (include synthetic price_range)
+  // Active filters count (include price slider)
   const activeFiltersCount = useMemo(() => {
     const headerCount = Object.entries(filters).filter(([k, v]) => {
-      if (k === "price_range") return false;
       const c = cleanOne(v);
       return c && isMeaningful(c) && facets[k]?.length;
     }).length;
-    const priceCount = cleanOne(filters.price_range || "") ? 1 : 0;
-    return headerCount + priceCount;
-  }, [filters, facets]);
+    const priceActive = (sliderMin !== priceMin || sliderMax !== priceMax) ? 1 : 0;
+    return headerCount + priceActive;
+  }, [filters, facets, sliderMin, sliderMax, priceMin, priceMax]);
 
   // Reset page when search/filters change
   useEffect(() => {
     setPage(1);
-  }, [q, filters]);
+  }, [q, filters, sliderMin, sliderMax]);
 
   // search + filter (apply price range first)
   const filtered = useMemo(() => {
     const needle = normalize(q);
 
-    // find a price column header
-    const priceHeader =
-      findHeader(headers, ["price", "amount", "cost", "ngn", "price (ngn)"]);
-
-    const bounds = rangeFromLabel(filters?.price_range || "");
+    const ph = findHeader(headers, ["price", "amount", "cost", "ngn", "price (ngn)"]);
 
     return sourceItems.filter((row) => {
-      // 1) price range filter (if selected)
-      if (bounds && priceHeader) {
-        const [min, max] = bounds;
-        const p = parsePriceCell(row[priceHeader]);
-        if (!(isFinite(p) && p >= min && p <= max)) return false;
+      // 1) price range slider
+      if (ph && (sliderMin !== priceMin || sliderMax !== priceMax)) {
+        const p = parsePriceCell(row[ph]);
+        if (!(isFinite(p) && p >= sliderMin && p <= sliderMax)) return false;
       }
 
       // 2) search across all headers
@@ -719,7 +732,6 @@ export default function ProductGrid({
 
       // 3) per-header facet filters (tolerant equality)
       const specsMatch = Object.entries(filters).every(([key, val]) => {
-        if (key === "price_range") return true; // handled above
         const cval = cleanOne(val);
         if (!cval) return true;
         if (!facets[key]?.length) return true;
@@ -730,7 +742,7 @@ export default function ProductGrid({
 
       return specsMatch;
     });
-  }, [sourceItems, headers, q, filters, facets]);
+  }, [sourceItems, headers, q, filters, facets, sliderMin, sliderMax, priceMin, priceMax]);
 
   // pagination
   const total = filtered.length;
@@ -874,15 +886,20 @@ export default function ProductGrid({
 
         {/* Pluggable filter panel — HIDDEN by default, toggled by button */}
         {filtersOpen &&
-          (typeof renderFilters === "function" ? (
+            (typeof renderFilters === "function" ? (
             renderFilters({
               headers,
               facets,
               filters,
               onChange: onSpecChange,
               clear: clearSpecs,
-              // pass data so FiltersBase can build price buckets
+              // pass data for custom panels
               items: sourceItems,
+              // price slider
+              priceHeader,
+              sliderMin, setSliderMin,
+              sliderMax, setSliderMax,
+              priceMin, priceMax,
               // extra helpers for custom panels
               onSpecChange,
               clearSpecs,
@@ -905,11 +922,32 @@ export default function ProductGrid({
                 </button>
               </div>
 
+              {priceHeader && priceMin < priceMax && (
+                <div className="mt-3">
+                  <PriceSlider
+                    priceMin={priceMin}
+                    priceMax={priceMax}
+                    sliderMin={sliderMin}
+                    sliderMax={sliderMax}
+                    setSliderMin={setSliderMin}
+                    setSliderMax={setSliderMax}
+                  />
+                  <div className="mt-2 flex justify-end">
+                    <button
+                      onClick={() => { setSliderMin(priceMin); setSliderMax(priceMax); }}
+                      className="rounded-md border px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 dark:border-neutral-700 dark:text-gray-300 dark:hover:bg-neutral-800"
+                    >
+                      Reset Price
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {headers
                   .filter(
                     (h) =>
-                      !["id", "img", "image", "imageurl", "image_url"].includes(
+                      !["id", "img", "image", "imageurl", "image_url", "price", "amount", "cost", "ngn"].includes(
                         h.toLowerCase(),
                       ),
                   )

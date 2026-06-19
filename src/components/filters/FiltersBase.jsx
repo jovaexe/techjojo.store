@@ -1,6 +1,7 @@
 // src/components/filters/FiltersBase.jsx
 import { useMemo, useState } from "react";
 import SpecSelect from "./SpecSelect";
+import PriceSlider from "./PriceSlider";
 
 /* --------------------------- helpers --------------------------- */
 function caseFindHeader(headers, candidates) {
@@ -43,20 +44,6 @@ function uniqueCaseInsensitive(arr) {
   }
   return out;
 }
-function parsePrice(input) {
-  if (input == null) return NaN;
-  const s = String(input)
-    .replace(/[₦,]/g, "")
-    .replace(/\s+/g, " ")
-    .replace(/ngn/i, "")
-    .trim();
-  const m = s.match(/(\d+(\.\d+)?)/);
-  return m ? Number(m[1]) : NaN;
-}
-
-const STEP = 100_000;
-const toK = (n) => `${Math.round(n / 1000)}K`;
-
 /* ------------------------- component ------------------------- */
 export default function FiltersBase({
   title = "Filters",
@@ -68,6 +55,11 @@ export default function FiltersBase({
   keys = [],
   /** rows from CSV; used to build dynamic price buckets */
   items = [],
+  /** price slider props (passed from ProductGrid) */
+  priceHeader: extPriceHeader,
+  sliderMin, setSliderMin,
+  sliderMax, setSliderMax,
+  priceMin, priceMax,
 }) {
   const [open, setOpen] = useState(true);
 
@@ -96,66 +88,7 @@ export default function FiltersBase({
     return out;
   }, [facets, actualHeaderByConfigKey]);
 
-  // Detect Price header
-  const priceHeader = useMemo(
-    () => caseFindHeader(headers, ["Price", "Amount", "Cost", "NGN", "Price (NGN)"]),
-    [headers]
-  );
-
-  // Build dynamic ₦100k buckets from items (min→max). If no data, fall back to 100–900K.
-  const priceOptions = useMemo(() => {
-    const opts = [];
-
-    if (!items?.length || !priceHeader) {
-      for (let s = 100_000; s < 900_000; s += STEP) {
-        const e = s + STEP;
-        const lbl = `${toK(s)}–${toK(e)}`;
-        opts.push(lbl);
-      }
-      return opts;
-    }
-
-    const prices = [];
-    for (const row of items) {
-      const p = parsePrice(row?.[priceHeader]);
-      if (isFinite(p)) prices.push(p);
-    }
-    if (!prices.length) {
-      for (let s = 100_000; s < 900_000; s += STEP) {
-        const e = s + STEP;
-        opts.push(`${toK(s)}–${toK(e)}`);
-      }
-      return opts;
-    }
-
-    let min = Math.min(...prices);
-    let max = Math.max(...prices);
-
-    // Pad to STEP boundaries
-    const start = Math.floor(min / STEP) * STEP;
-    const end = Math.ceil(max / STEP) * STEP;
-
-    for (let s = Math.max(0, start); s < end; s += STEP) {
-      const e = s + STEP;
-      const lbl = `${toK(s)}–${toK(e)}`;
-      opts.push(lbl);
-    }
-
-    // Optional: only keep buckets that actually contain items
-    // Count into buckets then filter empty ones
-    const counts = new Map(opts.map((l) => [l, 0]));
-    for (const p of prices) {
-      const bucketStart = Math.floor((p - Math.max(0, start)) / STEP) * STEP + Math.max(0, start);
-      const lbl = `${toK(bucketStart)}–${toK(bucketStart + STEP)}`;
-      if (counts.has(lbl)) counts.set(lbl, (counts.get(lbl) || 0) + 1);
-    }
-    const withData = opts.filter((l) => (counts.get(l) || 0) > 0);
-    return withData.length ? withData : opts;
-  }, [items, priceHeader]);
-
-  const priceValue = cleanOne(filters["price_range"] || "");
-
-  // Count of active filters (CSV-backed + synthetic price_range)
+  // Count of active filters
   const activeCount = useMemo(() => {
     const baseCount = Object.entries(filters).filter(([k, v]) => {
       const cleaned = cleanOne(v);
@@ -164,13 +97,10 @@ export default function FiltersBase({
     }).length;
 
     const priceActive =
-      cleanOne(filters["price_range"]) &&
-      isMeaningful(cleanOne(filters["price_range"]))
-        ? 1
-        : 0;
+      (sliderMin !== priceMin || sliderMax !== priceMax) ? 1 : 0;
 
     return baseCount + priceActive;
-  }, [filters, optionsByHeader]);
+  }, [filters, optionsByHeader, sliderMin, sliderMax, priceMin, priceMax]);
 
   return (
     <div className="mb-4 rounded-2xl border bg-white p-3 shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
@@ -207,13 +137,19 @@ export default function FiltersBase({
 
       {open && (
         <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {/* ---- Price (dynamic ₦100K buckets) ---- */}
-          <SpecSelect
-            label="Price"
-            value={priceValue}
-            options={priceOptions /* array of strings like "300K–400K" */}
-            onChange={(v) => onChange("price_range", v)}
-          />
+          {/* ---- Price (slider) ---- */}
+          {extPriceHeader && priceMin < priceMax && (
+            <div className="sm:col-span-2 lg:col-span-3 xl:col-span-4">
+              <PriceSlider
+                priceMin={priceMin}
+                priceMax={priceMax}
+                sliderMin={sliderMin}
+                sliderMax={sliderMax}
+                setSliderMin={setSliderMin}
+                setSliderMax={setSliderMax}
+              />
+            </div>
+          )}
 
           {/* ---- CSV-backed filters ---- */}
           {keys.map((entry) => {
