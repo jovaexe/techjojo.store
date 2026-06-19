@@ -1,7 +1,7 @@
 // src/components/ProductGrid.jsx
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import ThemeToggle from "./ThemeToggle";
+
 import PriceSlider from "./filters/PriceSlider";
 
 // ===== Helpers =====
@@ -326,9 +326,8 @@ function Card({ children, className = "" }) {
 
 function ImgWithLoader({ src, alt }) {
   const [loaded, setLoaded] = useState(false);
-  const [errored, setErrored] = useState(false);
-  const retriesRef = useRef(0);
-  const timerRef = useRef(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const [gaveUp, setGaveUp] = useState(false);
 
   const safeSrc = (() => {
     if (!src) return "";
@@ -339,31 +338,7 @@ function ImgWithLoader({ src, alt }) {
     }
   })();
 
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
-    };
-  }, []);
-
-  const handleError = useCallback(() => {
-    if (retriesRef.current < 2) {
-      retriesRef.current += 1;
-      timerRef.current = setTimeout(() => {
-        setLoaded(false);
-        setErrored(false);
-      }, 1000);
-    } else {
-      console.warn("Image failed after retries:", safeSrc);
-      setErrored(true);
-    }
-  }, [safeSrc]);
-
-  const handleLoad = useCallback(() => {
-    retriesRef.current = 0;
-    setLoaded(true);
-  }, []);
-
-  if (!safeSrc || errored) {
+  if (!safeSrc || gaveUp) {
     return (
       <div className="aspect-[4/3] w-full bg-gray-100 dark:bg-neutral-800">
         <div className="flex h-full w-full items-center justify-center text-xs text-gray-400 dark:text-gray-500">
@@ -381,10 +356,19 @@ function ImgWithLoader({ src, alt }) {
         </div>
       )}
       <img
-        src={safeSrc}
+        key={retryCount}
+        src={retryCount > 0 ? `${safeSrc}${safeSrc.includes("?") ? "&" : "?"}retry=${retryCount}` : safeSrc}
         alt={alt}
-        onLoad={handleLoad}
-        onError={handleError}
+        onLoad={() => { setLoaded(true); }}
+        onError={() => {
+          if (retryCount < 2) {
+            setLoaded(false);
+            setRetryCount(c => c + 1);
+          } else {
+            console.warn("Image failed after retries:", safeSrc);
+            setGaveUp(true);
+          }
+        }}
         className={`h-full w-full object-cover transition-opacity duration-300 ${
           loaded ? "opacity-100" : "opacity-0"
         }`}
@@ -915,7 +899,6 @@ export default function ProductGrid({
                 </button>
               )}
 
-              <ThemeToggle />
             </div>
           </div>
         </header>
