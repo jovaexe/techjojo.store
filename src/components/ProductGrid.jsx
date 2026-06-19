@@ -567,16 +567,7 @@ export default function ProductGrid({
     try {
       const card = el.closest(".rounded-2xl");
       if (!card) return;
-      const clone = card.cloneNode(true);
-      clone.style.borderRadius = "0";
-      clone.style.width = card.offsetWidth + "px";
-      clone.style.position = "fixed";
-      clone.style.left = "-9999px";
-      clone.style.top = "0";
-      document.body.appendChild(clone);
-      await new Promise((r) => setTimeout(r, 50));
-      const canvas = await html2canvas(clone, { scale: 2, useCORS: true, backgroundColor: "#ffffff" });
-      document.body.removeChild(clone);
+      const canvas = await html2canvas(card, { scale: 2, useCORS: true, backgroundColor: null });
       const slug = title.replace(/\s+/g, "").toLowerCase();
       const url = slug ? `www.techjojo.store/${slug}` : "www.techjojo.store";
       const link = document.createElement("a");
