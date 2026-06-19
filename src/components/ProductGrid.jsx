@@ -329,14 +329,7 @@ function ImgWithLoader({ src, alt }) {
   const [retryCount, setRetryCount] = useState(0);
   const [gaveUp, setGaveUp] = useState(false);
 
-  const safeSrc = (() => {
-    if (!src) return "";
-    try {
-      return new URL(src, window.location.origin).href;
-    } catch {
-      return src;
-    }
-  })();
+  const safeSrc = !src ? "" : src;
 
   if (!safeSrc || gaveUp) {
     return (
@@ -373,7 +366,6 @@ function ImgWithLoader({ src, alt }) {
           loaded ? "opacity-100" : "opacity-0"
         }`}
         loading="lazy"
-        referrerPolicy="no-referrer"
       />
     </div>
   );
@@ -855,7 +847,7 @@ export default function ProductGrid({
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="relative w-64 sm:w-80">
+            <div className="relative flex-1 sm:flex-none sm:w-80">
               <input
                 value={q}
                 onChange={onSearchChange}
