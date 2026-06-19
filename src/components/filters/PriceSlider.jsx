@@ -1,4 +1,4 @@
-import { useRef, useCallback, useEffect } from "react";
+import { useRef, useCallback, useEffect, useState } from "react";
 
 export default function PriceSlider({
   label = "Price",
@@ -6,10 +6,15 @@ export default function PriceSlider({
   sliderMin, sliderMax,
   setSliderMin, setSliderMax,
 }) {
+  const [minStr, setMinStr] = useState(String(sliderMin));
+  const [maxStr, setMaxStr] = useState(String(sliderMax));
   const trackRef = useRef(null);
   const dragRef = useRef(null);
   const sliderRef = useRef({ sliderMin, sliderMax });
   sliderRef.current = { sliderMin, sliderMax };
+
+  useEffect(() => { setMinStr(String(sliderMin)); }, [sliderMin]);
+  useEffect(() => { setMaxStr(String(sliderMax)); }, [sliderMax]);
 
   const getValue = useCallback((clientX) => {
     const rect = trackRef.current.getBoundingClientRect();
@@ -61,7 +66,10 @@ export default function PriceSlider({
     }
   };
 
-  const pct = (v) => ((v - priceMin) / (priceMax - priceMin)) * 100;
+  const pct = (v) => {
+    const raw = ((v - priceMin) / (priceMax - priceMin)) * 100;
+    return Math.max(0, Math.min(100, raw));
+  };
 
   return (
     <div>
@@ -107,11 +115,16 @@ export default function PriceSlider({
           <span className="text-[10px] text-gray-500 dark:text-gray-400">Min</span>
           <input
             type="number"
-            value={sliderMin}
+            value={minStr}
             onChange={(e) => {
-              const v = Number(e.target.value);
-              if (v >= priceMin && v <= sliderMax) setSliderMin(v);
+              const raw = e.target.value;
+              setMinStr(raw);
+              if (raw !== "") {
+                const v = Number(raw);
+                if (!isNaN(v) && isFinite(v)) setSliderMin(Math.round(v));
+              }
             }}
+            onBlur={() => { if (minStr === "" || isNaN(Number(minStr))) setMinStr(String(sliderMin)); }}
             className="w-full rounded-md border bg-white px-2 py-1 text-xs outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-gray-100"
           />
         </label>
@@ -120,11 +133,16 @@ export default function PriceSlider({
           <span className="text-[10px] text-gray-500 dark:text-gray-400">Max</span>
           <input
             type="number"
-            value={sliderMax}
+            value={maxStr}
             onChange={(e) => {
-              const v = Number(e.target.value);
-              if (v >= sliderMin && v <= priceMax) setSliderMax(v);
+              const raw = e.target.value;
+              setMaxStr(raw);
+              if (raw !== "") {
+                const v = Number(raw);
+                if (!isNaN(v) && isFinite(v)) setSliderMax(Math.round(v));
+              }
             }}
+            onBlur={() => { if (maxStr === "" || isNaN(Number(maxStr))) setMaxStr(String(sliderMax)); }}
             className="w-full rounded-md border bg-white px-2 py-1 text-xs outline-none dark:border-neutral-700 dark:bg-neutral-900 dark:text-gray-100"
           />
         </label>
