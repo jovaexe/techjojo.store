@@ -20,7 +20,6 @@ export default function GamingLaptopFilters(props) {
     { key: "condition", label: "Condition" },
     { key: "delivery", label: "Delivery" },
     { key: "bundle", label: "Bundle" },
-    { key: "category", label: "Category" },
     // { key: "tags",      label: "Tags" },
     // If you want to filter by product name as well, uncomment:
     // { key: "name", label: "Name" },

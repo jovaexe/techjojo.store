@@ -30,24 +30,10 @@ export default function GamingAccessoriesFilters(props) {
       label: "Build",
       aliases: ["build_quality", "material", "design"],
     },
-    {
-      key: "compatibi",
-      label: "Compatibility",
-      aliases: [
-        "compatibility",
-        "platform",
-        "pc",
-        "xbox",
-        "playstation",
-        "switch",
-      ],
-    },
-
     { key: "condition", label: "Condition" },
     { key: "delivery", label: "Delivery" },
     { key: "bundle", label: "Bundle" },
     { key: "category", label: "Category" },
-    { key: "tags", label: "Tags" },
 
     // Optional: include name if you want a name filter
     // { key: "name", label: "Name" },

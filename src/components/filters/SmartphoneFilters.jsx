@@ -34,7 +34,7 @@ export default function SmartphoneFilters(props) {
     },
     {
       key: "cpu",
-      label: "Chip",
+      label: "CPU",
       aliases: ["processor", "chipset"],
     },
     {
@@ -83,19 +83,14 @@ export default function SmartphoneFilters(props) {
       aliases: ["shipping"],
     },
     {
-      key: "bundle",
-      label: "Bundle",
-      aliases: ["box", "accessories", "included"],
-    },
-    {
       key: "category",
       label: "Category",
       aliases: ["type"],
     },
     {
-      key: "tags",
-      label: "Tags",
-      aliases: ["label", "labels"],
+      key: "bundle",
+      label: "Bundle",
+      aliases: ["box", "accessories", "included"],
     },
   ];
 

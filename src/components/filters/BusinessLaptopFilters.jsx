@@ -25,12 +25,10 @@ export default function BusinessLaptopFilters(props) {
     { key: "gpu",       label: "GPU",       aliases: ["graphics", "graphics card", "video", "graphics graphics"] },
     { key: "keyboard",  label: "Keyboard",  aliases: ["backlit", "keyboard type"] },
     { key: "security",  label: "Security",  aliases: ["fingerprint", "tpm", "smart card", "camera shutter"] },
-    { key: "connectivity", label: "Connectivity", aliases: ["wifi", "bluetooth", "ports", "network"] },
-    { key: "condition", label: "Condition", aliases: [] },
+    { key: "condition", label: "Condition" },
     { key: "delivery",  label: "Delivery",  aliases: ["shipping"] },
     { key: "bundle",    label: "Bundle",    aliases: ["freebies", "extras", "included"] },
-    { key: "category",  label: "Category",  aliases: ["type", "segment"] },
-    { key: "tags",      label: "Tags",      aliases: ["label", "labels"] },
+
   ];
 
   // Only keep keys that actually exist in the current CSV headers

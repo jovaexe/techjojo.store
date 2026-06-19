@@ -16,14 +16,7 @@ const KEYS = [
   {
     key: "category",
     label: "Category",
-    aliases: [
-      "refrigerator",
-      "washing machine",
-      "air conditioner",
-      "microwave",
-      "freezer",
-      "home appliance",
-    ],
+    aliases: ["refrigerator", "washing machine", "air conditioner", "microwave", "freezer", "home appliance"],
   },
   {
     key: "capacity",
@@ -85,11 +78,6 @@ const KEYS = [
     key: "price",
     label: "Price",
     aliases: ["cost", "amount", "naira", "₦"],
-  },
-  {
-    key: "tags",
-    label: "Tags",
-    aliases: ["popular", "new", "sale", "hot", "discount"],
   },
 ];
 
