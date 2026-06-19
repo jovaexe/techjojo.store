@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Search } from "lucide-react";
 import { getCachedProducts, onReady } from "../lib/productCache";
@@ -173,7 +173,43 @@ function normalize(v) {
 function ImgWithLoader({ src, alt }) {
   const [loaded, setLoaded] = useState(false);
   const [errored, setErrored] = useState(false);
-  if (!src || errored) {
+  const retriesRef = useRef(0);
+  const timerRef = useRef(null);
+
+  const safeSrc = (() => {
+    if (!src) return "";
+    try {
+      return new URL(src, window.location.origin).href;
+    } catch {
+      return src;
+    }
+  })();
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  const handleError = useCallback(() => {
+    if (retriesRef.current < 2) {
+      retriesRef.current += 1;
+      timerRef.current = setTimeout(() => {
+        setLoaded(false);
+        setErrored(false);
+      }, 1000);
+    } else {
+      console.warn("Image failed after retries:", safeSrc);
+      setErrored(true);
+    }
+  }, [safeSrc]);
+
+  const handleLoad = useCallback(() => {
+    retriesRef.current = 0;
+    setLoaded(true);
+  }, []);
+
+  if (!safeSrc || errored) {
     return (
       <div className="aspect-[4/3] w-full bg-gray-100 dark:bg-neutral-800">
         <div className="flex h-full w-full items-center justify-center text-xs text-gray-400">No image</div>
@@ -187,8 +223,8 @@ function ImgWithLoader({ src, alt }) {
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-gray-300 border-t-gray-700 dark:border-neutral-700 dark:border-t-neutral-300" />
         </div>
       )}
-      <img src={src} alt={alt} onLoad={() => setLoaded(true)} onError={() => setErrored(true)}
-        className={`h-full w-full object-cover transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`} loading="lazy" />
+      <img src={safeSrc} alt={alt} onLoad={handleLoad} onError={handleError}
+        className={`h-full w-full object-cover transition-opacity duration-300 ${loaded ? "opacity-100" : "opacity-0"}`} loading="lazy" referrerPolicy="no-referrer" />
     </div>
   );
 }
@@ -262,10 +298,27 @@ export default function SearchPage() {
   const filtered = useMemo(() => {
     if (!query || !allProducts.length) return [];
     const needle = normalize(query);
-    return allProducts.filter((p) => {
-      const hay = Object.values(p._raw).map(v => normalize(String(v))).join(" ");
-      return hay.includes(needle);
-    });
+
+    const scored = [];
+    for (const p of allProducts) {
+      const rawStr = Object.values(p._raw).map(v => normalize(String(v))).join(" ");
+      if (!rawStr.includes(needle)) continue;
+
+      let score = 0;
+      // name match = most relevant
+      if (normalize(p._name).includes(needle)) score += 3;
+      // category/type or source group match = very relevant
+      if (normalize(p._source).includes(needle)) score += 2;
+      const catHeader = p._headers.find(h => h.toLowerCase() === "category" || h.toLowerCase() === "type");
+      if (catHeader && normalize(String(p._raw[catHeader] || "")).includes(needle)) score += 2;
+      // match in other fields = baseline
+      score += 1;
+
+      scored.push({ product: p, score });
+    }
+
+    scored.sort((a, b) => b.score - a.score);
+    return scored.map(s => s.product);
   }, [allProducts, query]);
 
   const grouped = useMemo(() => {
