@@ -44,7 +44,7 @@ const tiles = [
   // Apple • M-series • Retina
   subtitle: "Air • Pro • M1–M4",
   Icon: Laptop,
-  accent: "from-sky-900/20 to-blue-500/0 dark:from-blue-100/10 dark:to-transparent",
+   accent: "from-slate-400/20 to-slate-400/0 dark:from-slate-300/10 dark:to-transparent",
 },
   {
     to: "/desktops",
@@ -59,7 +59,7 @@ const tiles = [
     subtitle: "Apple • Samsung • Motorola",
     Icon: Smartphone,
     accent:
-      "from-neutral-700/20 to-neutral-700/0 dark:from-neutral-300/10 dark:to-transparent",
+      "from-violet-500/20 to-pink-500/0 dark:from-violet-400/10 dark:to-transparent",
   },
   {
     to: "/monitors",
@@ -75,7 +75,7 @@ const tiles = [
     // Samsung ° AoC ° High Refresh Rate
     subtitle: "Keyboard • Mouse •  Headset",
     Icon: Gamepad2,
-    accent: "from-yellow-900/20 to-emerald-500/0 dark:from-green-100/10 dark:to-transparent",
+    accent: "from-orange-500/20 to-amber-500/0 dark:from-orange-400/10 dark:to-transparent",
   },
   {
   to: "/homeappliances",
