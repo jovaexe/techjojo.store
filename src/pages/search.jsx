@@ -304,17 +304,18 @@ export default function SearchPage() {
     return [...filtered, ...soldPool];
   }, [allProducts, soldPool, showSold]);
 
-  const filtered = useMemo(() => {
-    if (!allProductsWithSold.length) return [];
-    if (!query && !showSold) return [];
+  const { filtered, isFallback } = useMemo(() => {
+    if (!allProductsWithSold.length) return { filtered: [], isFallback: false };
+    if (!query && !showSold) return { filtered: [], isFallback: false };
 
     const needle = normalize(query);
     const words = needle ? needle.split(/\s+/).filter(Boolean) : [];
 
-    const scored = [];
+    const exactScored = [];
+    const partialScored = [];
     for (const p of allProductsWithSold) {
       if (!words.length) {
-        scored.push({ product: p, score: 0 });
+        exactScored.push({ product: p, score: 0 });
         continue;
       }
 
@@ -323,30 +324,37 @@ export default function SearchPage() {
       const sourceStr = normalize(p._source);
       const brandStr = normalize(p._brand);
 
-      // Match if exact phrase OR all individual words appear
+      // Exact match: phrase OR all words
       const phraseMatch = rawStr.includes(needle);
       const wordsMatch = words.every(w => rawStr.includes(w));
-      if (!phraseMatch && !wordsMatch) continue;
+
+      // Partial match: any word matches
+      const anyMatch = words.some(w => rawStr.includes(w));
 
       let score = 0;
       for (const w of words) {
         if (nameStr.includes(w)) score += 3;
         if (brandStr.includes(w)) score += 2;
-        if (sourceStr.includes(w)) score += 2;
+        if (sourceStr.includes(w)) score += 8;
         score += 1;
       }
 
-      // Phrase bonus
       if (nameStr.includes(needle)) score += 5;
       if (brandStr.includes(needle)) score += 3;
-      if (sourceStr.includes(needle)) score += 3;
+      if (sourceStr.includes(needle)) score += 6;
       if (rawStr.includes(needle)) score += 2;
 
-      scored.push({ product: p, score });
+      if (phraseMatch || wordsMatch) {
+        exactScored.push({ product: p, score });
+      } else if (anyMatch) {
+        partialScored.push({ product: p, score: score / 2 });
+      }
     }
 
-    if (needle) scored.sort((a, b) => b.score - a.score);
-    return scored.map(s => s.product);
+    const useFallback = needle && exactScored.length === 0 && partialScored.length > 0;
+    const results = useFallback ? partialScored : exactScored;
+    if (needle) results.sort((a, b) => b.score - a.score);
+    return { filtered: results.map(s => ({ ...s.product, __fallback: useFallback })), isFallback: useFallback };
   }, [allProductsWithSold, query, showSold]);
 
   const grouped = useMemo(() => {
@@ -413,15 +421,22 @@ export default function SearchPage() {
           </div>
         )}
 
-        {ready && query && filtered.length === 0 && (
+        {ready && query && filtered.length === 0 && !isFallback && (
           <div className="rounded-xl border bg-white p-10 text-center text-sm text-gray-500 dark:border-neutral-800 dark:bg-neutral-900 dark:text-gray-300">
             No products found for "{query}".
           </div>
         )}
 
+        {isFallback && (
+          <div className="mb-4 rounded-xl border border-yellow-300 bg-yellow-100 p-4 text-sm text-yellow-800 dark:border-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-200">
+            No exact matches found for "<strong>{query}</strong>". Here are similar products you might be interested in:
+          </div>
+        )}
+
         {ready && filtered.length > 0 && (query || showSold) && (
           <div className="mb-4 text-sm text-gray-500 dark:text-gray-400">
-            {query && showSold ? `Found ${filtered.length} result${filtered.length === 1 ? "" : "s"} for "${query}"` :
+            {isFallback ? `Showing ${filtered.length} similar product${filtered.length === 1 ? "" : "s"}` :
+             query && showSold ? `Found ${filtered.length} result${filtered.length === 1 ? "" : "s"} for "${query}"` :
              query ? `Found ${filtered.length} result${filtered.length === 1 ? "" : "s"} for "${query}"` :
              `Showing ${filtered.length} sold item${filtered.length === 1 ? "" : "s"}`}
           </div>
