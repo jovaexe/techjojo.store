@@ -571,6 +571,7 @@ export default function ProductGrid({
   const topRef = useRef(null);
 
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [soldVersion, setSoldVersion] = useState(0);
 
   // Normalize each row & compute helpers
   const sourceItems = useMemo(() => {
@@ -623,6 +624,67 @@ export default function ProductGrid({
     });
     return result;
   }, [activeRows, headers]);
+
+  // ——— Sold product tracking (stable key = name|brand) ———
+  function stableKey(p) {
+    return `${p.__name}|${p.__brand}`;
+  }
+
+  useEffect(() => {
+    if (!sheetCsvUrl || !sourceItems.length || !headers.length) return;
+    const sourceKey = sheetCsvUrl.replace(/[^a-zA-Z0-9]/g, "_");
+    const backupKey = `tj_prod_${sourceKey}`;
+    const soldKey = `tj_sold_${sourceKey}`;
+    let backup = {};
+    let sold = {};
+    try { backup = JSON.parse(localStorage.getItem(backupKey) || "{}"); } catch {}
+    try { sold = JSON.parse(localStorage.getItem(soldKey) || "{}"); } catch {}
+    const currentKeys = new Set(sourceItems.map(p => stableKey(p)));
+    let dirty = false;
+    for (const p of sourceItems) {
+      const key = stableKey(p);
+      if (sold[key]) { delete sold[key]; dirty = true; }
+    }
+    for (const p of sourceItems) {
+      const key = stableKey(p);
+      if (!backup[key]) { backup[key] = p; dirty = true; }
+    }
+    for (const key of Object.keys(backup)) {
+      if (!currentKeys.has(key) && !sold[key]) { sold[key] = { soldAt: Date.now() }; dirty = true; }
+    }
+    const TTL = 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    for (const key of Object.keys(sold)) {
+      if (now - sold[key].soldAt >= TTL) { delete sold[key]; delete backup[key]; dirty = true; }
+    }
+    if (dirty) {
+      try { localStorage.setItem(backupKey, JSON.stringify(backup)); } catch {}
+      try { localStorage.setItem(soldKey, JSON.stringify(sold)); } catch {}
+      setSoldVersion(v => v + 1);
+    }
+  }, [sourceItems, headers, sheetCsvUrl]);
+
+  const soldItems = useMemo(() => {
+    if (!sheetCsvUrl || !headers.length) return [];
+    const sourceKey = sheetCsvUrl.replace(/[^a-zA-Z0-9]/g, "_");
+    const backupKey = `tj_prod_${sourceKey}`;
+    const soldKey = `tj_sold_${sourceKey}`;
+    let backup = {};
+    let sold = {};
+    try { backup = JSON.parse(localStorage.getItem(backupKey) || "{}"); } catch {}
+    try { sold = JSON.parse(localStorage.getItem(soldKey) || "{}"); } catch {}
+    const TTL = 24 * 60 * 60 * 1000;
+    const now = Date.now();
+    const items = [];
+    for (const [key, info] of Object.entries(sold)) {
+      if (now - info.soldAt < TTL && backup[key]) items.push({ ...backup[key], __sold: true });
+    }
+    return items;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [headers, sheetCsvUrl, soldVersion]);
+
+  // Merge sold items into sourceItems for display
+  const displayItems = useMemo(() => [...sourceItems, ...soldItems], [sourceItems, soldItems]);
 
   // Build facets dynamically from headers (skip private/display-only fields)
   const facets = useMemo(() => {
@@ -724,7 +786,7 @@ export default function ProductGrid({
 
     const ph = findHeader(headers, ["price", "amount", "cost", "ngn", "price (ngn)"]);
 
-    return sourceItems.filter((row) => {
+    return displayItems.filter((row) => {
       // 1) price range slider
       if (ph && (sliderMin !== priceMin || sliderMax !== priceMax)) {
         const p = parsePriceCell(row[ph]);
@@ -754,7 +816,7 @@ export default function ProductGrid({
 
       return specsMatch;
     });
-  }, [sourceItems, headers, q, filters, facets, sliderMin, sliderMax, priceMin, priceMax]);
+  }, [displayItems, headers, q, filters, facets, sliderMin, sliderMax, priceMin, priceMax]);
 
   // pagination
   const total = filtered.length;
@@ -1016,7 +1078,7 @@ export default function ProductGrid({
                 key={p.__id}
                 className="flex h-full flex-col overflow-hidden transition hover:shadow-lg"
               >
-                <div className="w-full overflow-hidden">
+                <div className="relative w-full overflow-hidden">
                   <button
                     type="button"
                     onClick={() => {
@@ -1032,6 +1094,13 @@ export default function ProductGrid({
                       alt={p.__name}
                     />
                   </button>
+                  {p.__sold && (
+                    <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                      <span className="-rotate-12 border-4 border-black px-6 py-3 font-['Montserrat'] text-2xl font-black tracking-[0.3em] text-black dark:border-white dark:text-white">
+                        SOLD
+                      </span>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-1 flex-col space-y-3 p-4">
