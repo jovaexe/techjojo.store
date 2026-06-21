@@ -318,7 +318,9 @@ export default function SearchPage() {
 
   const allProductsWithSold = useMemo(() => {
     if (!showSold || !soldPool.length) return allProducts;
-    return [...allProducts, ...soldPool];
+    const soldNames = new Set(soldPool.map(p => `${p._name}|${p._brand}`));
+    const filtered = allProducts.filter(p => !soldNames.has(`${p._name}|${p._brand}`));
+    return [...filtered, ...soldPool];
   }, [allProducts, soldPool, showSold]);
 
   const filtered = useMemo(() => {
