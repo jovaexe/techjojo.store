@@ -361,6 +361,13 @@ export default function SearchPage() {
 
   const sortedGroups = useMemo(() => {
     const entries = Object.entries(grouped);
+    for (const [, products] of entries) {
+      products.sort((a, b) => {
+        const pa = typeof a._price === "number" ? a._price : Infinity;
+        const pb = typeof b._price === "number" ? b._price : Infinity;
+        return pa - pb;
+      });
+    }
     entries.sort((a, b) => {
       const ia = GROUP_ORDER.indexOf(a[0]);
       const ib = GROUP_ORDER.indexOf(b[0]);
