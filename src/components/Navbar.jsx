@@ -58,7 +58,7 @@ export default function Navbar() {
             className={`overflow-hidden rounded-lg border transition-all duration-300 ease-in-out ${
               searchOpen
                 ? "w-40 sm:w-60 border-gray-400 dark:border-neutral-500"
-                : "w-28 border-gray-400 dark:border-neutral-800 hover:bg-gray-100/80 dark:hover:bg-neutral-900"
+                : "w-48 border-gray-400 dark:border-neutral-800 hover:bg-gray-100/80 dark:hover:bg-neutral-900"
             }`}
           >
             {searchOpen ? (
