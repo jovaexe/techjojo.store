@@ -943,7 +943,7 @@ export default function ProductGrid({
               <input
                 value={q}
                 onChange={onSearchChange}
-                placeholder='Search by any header e.g. "144Hz", "8GB", "Dell"…'
+                placeholder="Search this catalog..."
                 className="w-full rounded-xl border bg-white px-4 py-2.5 text-sm outline-none ring-0 transition placeholder:text-gray-400 focus:border-gray-400 dark:border-neutral-700 dark:bg-neutral-900 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-neutral-500"
               />
               {q && (

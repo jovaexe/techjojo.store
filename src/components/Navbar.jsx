@@ -79,7 +79,7 @@ export default function Navbar() {
                 className="flex w-full items-center gap-2 px-4 py-2 text-sm font-medium whitespace-nowrap text-gray-900 transition dark:text-gray-100"
               >
                 <Search className="h-4 w-4" />
-                Search
+                Search All Products
               </button>
             )}
           </div>
