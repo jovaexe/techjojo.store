@@ -49,14 +49,14 @@ function parseCSV(csv) {
 }
 
 const CSV_URLS = [
-  { name: "Gaming Laptops", url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTYg3-LbibWCpecanR1TGzoNWUOnLAgbDVU1H_I0KsuXxoO444jKUt1P2LTYrxc_WkapaAMj6ozIgQ8/pub?output=csv" },
   { name: "Business Laptops", url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQxW6gngjCF1L1wNTUdW-Bq9lTE5PBLAPVvQQKjvjFoiqvA9wDuqrPfFhcNTdImuF1V9-2g_ZDGzJEl/pub?output=csv" },
+  { name: "Gaming Laptops", url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vTYg3-LbibWCpecanR1TGzoNWUOnLAgbDVU1H_I0KsuXxoO444jKUt1P2LTYrxc_WkapaAMj6ozIgQ8/pub?output=csv" },
   { name: "Macbooks", url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQxuYThDUuYKmEwO5b1c30ym4Z7ZF8ID528VHQ97lQm1HdZxsAXmVdJpoGmOcYXvO4IptOyNmWsOsXF/pub?output=csv" },
   { name: "Desktops", url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSPuCdo6sGWyH86QZWQLNZLA7Ybd4x_KoxBLLpo0qdZjAlgkvuunJaP8hp_ELQHy5sT_4BG61C0SrIu/pub?output=csv" },
+  { name: "Smartphones", url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRZ64ouEghFYbhpBe_Y6ySWmm-HwqK8nKfZddvHEegQ__r56q6wzjHg0WdcqcX0aqn4la-cDoizVPId/pub?output=csv" },
   { name: "Monitors", url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQ5ft5ucwP62CICVLAdQ3mhbd_d-kVAADV-0smlETAwSyvo_4C4N8WF78P0ygmXd4QTLU8XmlTfFXUn/pub?output=csv" },
   { name: "Tech Accessories", url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vSsLafTJKrbBBRbcyq2w6J8TEQvMI3ZjqeSXshV-RZeD0tBPsWBC8oP_Clz59e9PMNAzYdjcnDWu_-x/pub?output=csv" },
   { name: "Home Appliances", url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vQhRTH6lqI4LnjJs8JI_CcK9YDfAHPLAFcXHdMBD5OhqT0WKsABx3ML9RPTYuBmeSKiXUIyQrioHj0V/pub?output=csv" },
-  { name: "Smartphones", url: "https://docs.google.com/spreadsheets/d/e/2PACX-1vRZ64ouEghFYbhpBe_Y6ySWmm-HwqK8nKfZddvHEegQ__r56q6wzjHg0WdcqcX0aqn4la-cDoizVPId/pub?output=csv" },
 ];
 
 let cache = null;

@@ -241,7 +241,7 @@ function Card({ children, className = "" }) {
 
 const GROUP_ORDER = [
   "Business Laptops", "Gaming Laptops", "Macbooks", "Desktops",
-  "Monitors", "Tech Accessories", "Home Appliances", "Smartphones",
+  "Smartphones", "Monitors", "Tech Accessories", "Home Appliances",
 ];
 
 export default function SearchPage() {
