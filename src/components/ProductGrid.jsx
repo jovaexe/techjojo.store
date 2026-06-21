@@ -820,7 +820,7 @@ export default function ProductGrid({
         if (!(isFinite(p) && p >= sliderMin && p <= sliderMax)) return false;
       }
 
-      // 2) search across all headers
+      // 2) search across all headers (exact phrase OR all words)
       const hay = headers
         .map((h) => {
           const v = row[h];
@@ -828,8 +828,10 @@ export default function ProductGrid({
         })
         .map(normalize)
         .join(" ");
-      const searchMatch = !needle || hay.includes(needle);
-      if (!searchMatch) return false;
+      const words = needle ? needle.split(/\s+/).filter(Boolean) : [];
+      const phraseMatch = !needle || hay.includes(needle);
+      const wordsMatch = !needle || words.every(w => hay.includes(w));
+      if (needle && !phraseMatch && !wordsMatch) return false;
 
       // 3) per-header facet filters (tolerant equality)
       const specsMatch = Object.entries(filters).every(([key, val]) => {

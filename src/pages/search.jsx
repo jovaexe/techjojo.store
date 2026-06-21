@@ -309,24 +309,40 @@ export default function SearchPage() {
     if (!query && !showSold) return [];
 
     const needle = normalize(query);
+    const words = needle ? needle.split(/\s+/).filter(Boolean) : [];
 
     const scored = [];
     for (const p of allProductsWithSold) {
-      if (needle) {
-        const rawStr = Object.values(p._raw).map(v => normalize(String(v))).join(" ");
-        if (!rawStr.includes(needle)) continue;
-
-        let score = 0;
-        if (normalize(p._name).includes(needle)) score += 3;
-        if (normalize(p._source).includes(needle)) score += 2;
-        const catHeader = p._headers.find(h => h.toLowerCase() === "category" || h.toLowerCase() === "type");
-        if (catHeader && normalize(String(p._raw[catHeader] || "")).includes(needle)) score += 2;
-        score += 1;
-
-        scored.push({ product: p, score });
-      } else {
+      if (!words.length) {
         scored.push({ product: p, score: 0 });
+        continue;
       }
+
+      const rawStr = normalize(Object.values(p._raw).join(" "));
+      const nameStr = normalize(p._name);
+      const sourceStr = normalize(p._source);
+      const brandStr = normalize(p._brand);
+
+      // Match if exact phrase OR all individual words appear
+      const phraseMatch = rawStr.includes(needle);
+      const wordsMatch = words.every(w => rawStr.includes(w));
+      if (!phraseMatch && !wordsMatch) continue;
+
+      let score = 0;
+      for (const w of words) {
+        if (nameStr.includes(w)) score += 3;
+        if (brandStr.includes(w)) score += 2;
+        if (sourceStr.includes(w)) score += 2;
+        score += 1;
+      }
+
+      // Phrase bonus
+      if (nameStr.includes(needle)) score += 5;
+      if (brandStr.includes(needle)) score += 3;
+      if (sourceStr.includes(needle)) score += 3;
+      if (rawStr.includes(needle)) score += 2;
+
+      scored.push({ product: p, score });
     }
 
     if (needle) scored.sort((a, b) => b.score - a.score);

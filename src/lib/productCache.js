@@ -64,6 +64,9 @@ let loading = false;
 let loadPromise = null;
 let listeners = [];
 
+const CACHE_KEY = "tj_product_cache";
+const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+
 function notify() {
   listeners.forEach(fn => fn());
   listeners = [];
@@ -82,41 +85,74 @@ export function onReady(fn) {
   listeners.push(fn);
 }
 
+function loadFromCache() {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const { timestamp, data } = JSON.parse(raw);
+    if (Date.now() - timestamp > CACHE_TTL) return null;
+    return data;
+  } catch { return null; }
+}
+
+function saveToCache(data) {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), data })); } catch {}
+}
+
+async function fetchAll() {
+  const results = await Promise.all(CSV_URLS.map(async ({ name, url }) => {
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) throw new Error(`${name}: ${res.status}`);
+      const text = await res.text();
+      const { rows } = parseCSV(text);
+      const headers = rows.length ? Object.keys(rows[0]) : [];
+      const nameKey = headers.find(h => h.toLowerCase() === "name") || null;
+      const brandKey = headers.find(h => h.toLowerCase() === "brand") || null;
+      const imgKey = headers.find(h => ["img", "image", "imageurl", "image_url"].includes(h.toLowerCase())) || null;
+      const priceKey = headers.find(h => h.toLowerCase() === "price") || null;
+      return {
+        source: name,
+        rows: rows.map(row => ({
+          _raw: row,
+          _headers: headers,
+          _name: nameKey ? String(row[nameKey]) : "-",
+          _brand: brandKey ? String(row[brandKey]) : "-",
+          _img: imgKey ? String(row[imgKey]) : "-",
+          _price: priceKey ? row[priceKey] : "-",
+          _source: name,
+        })),
+      };
+    } catch { return null; }
+  }));
+  return results.filter(Boolean);
+}
+
 export function preloadAllProducts() {
-  if (cache || loading) return loadPromise;
-  loading = true;
-  loadPromise = (async () => {
-    const results = [];
-    for (const { name, url } of CSV_URLS) {
-      try {
-        const res = await fetch(url, { cache: "no-store" });
-        if (!res.ok) throw new Error(`${name}: ${res.status}`);
-        const text = await res.text();
-        const { rows } = parseCSV(text);
-        const headers = rows.length ? Object.keys(rows[0]) : [];
-        const nameKey = headers.find(h => h.toLowerCase() === "name") || null;
-        const brandKey = headers.find(h => h.toLowerCase() === "brand") || null;
-        const imgKey = headers.find(h => ["img", "image", "imageurl", "image_url"].includes(h.toLowerCase())) || null;
-        const priceKey = headers.find(h => h.toLowerCase() === "price") || null;
-        results.push({
-          source: name,
-          rows: rows.map(row => ({
-            _raw: row,
-            _headers: headers,
-            _name: nameKey ? String(row[nameKey]) : "-",
-            _brand: brandKey ? String(row[brandKey]) : "-",
-            _img: imgKey ? String(row[imgKey]) : "-",
-            _price: priceKey ? row[priceKey] : "-",
-            _source: name,
-          })),
-        });
-      } catch { }
-    }
-    cache = results;
+  if (cache) return Promise.resolve(cache);
+  if (loading) return loadPromise;
+
+  // Try cache first
+  const cached = loadFromCache();
+  if (cached) {
+    cache = cached;
     loading = false;
     notify();
+    // Still refresh in background
+    fetchAll().then(fresh => {
+      if (fresh.length) { cache = fresh; saveToCache(fresh); }
+    });
+    return Promise.resolve(cached);
+  }
+
+  loading = true;
+  loadPromise = fetchAll().then(results => {
+    cache = results;
+    loading = false;
+    if (results.length) saveToCache(results);
+    notify();
     return results;
-  })();
+  });
   return loadPromise;
 }
 export { CSV_URLS };
