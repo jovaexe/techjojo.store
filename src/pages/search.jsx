@@ -239,11 +239,6 @@ function Card({ children, className = "" }) {
   );
 }
 
-const GROUP_ORDER = [
-  "Business Laptops", "Gaming Laptops", "Macbooks", "Desktops",
-  "Smartphones", "Monitors", "Tech Accessories", "Home Appliances",
-];
-
 export default function SearchPage() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
@@ -356,13 +351,13 @@ export default function SearchPage() {
         return pa - pb;
       });
     }
-    entries.sort((a, b) => {
-      const ia = GROUP_ORDER.indexOf(a[0]);
-      const ib = GROUP_ORDER.indexOf(b[0]);
-      return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+    const rankMap = {};
+    filtered.forEach((p, i) => {
+      if (!(p._source in rankMap)) rankMap[p._source] = i;
     });
+    entries.sort((a, b) => (rankMap[a[0]] ?? 999) - (rankMap[b[0]] ?? 999));
     return entries;
-  }, [grouped]);
+  }, [grouped, filtered]);
 
   return (
     <main className="min-h-screen bg-gray-50 text-gray-900 dark:bg-black dark:text-gray-100">
