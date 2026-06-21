@@ -1,6 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Search } from "lucide-react";
 import { getCachedProducts, onReady, CSV_URLS } from "../lib/productCache";
 
 // Emoji spec helpers (mirrors ProductGrid)
@@ -246,20 +245,14 @@ const GROUP_ORDER = [
 ];
 
 export default function SearchPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
-  const [inputVal, setInputVal] = useState(query);
   const [allProducts, setAllProducts] = useState([]);
   const [ready, setReady] = useState(false);
   const [previewSrc, setPreviewSrc] = useState("");
   const [previewAlt, setPreviewAlt] = useState("");
   const [showSold, setShowSold] = useState(false);
-  const inputRef = useRef(null);
   const closePreview = () => { setPreviewSrc(""); setPreviewAlt(""); };
-
-  useEffect(() => {
-    if (inputRef.current) inputRef.current.focus();
-  }, []);
 
   useEffect(() => {
     if (getCachedProducts()) {
@@ -273,13 +266,6 @@ export default function SearchPage() {
       });
     }
   }, []);
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    const val = inputVal.trim();
-    if (val) setSearchParams({ q: val });
-    else setSearchParams({});
-  };
 
   // Load sold items from localStorage
   const soldPool = useMemo(() => {
@@ -387,22 +373,6 @@ export default function SearchPage() {
           </Link>
           <h1 className="mt-2 text-3xl font-bold">Search</h1>
         </header>
-
-        <form onSubmit={handleSearch} className="mb-6 flex gap-2">
-          <div className="relative flex-1">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-            <input
-              ref={inputRef}
-              value={inputVal}
-              onChange={(e) => setInputVal(e.target.value)}
-              placeholder="Search across all products..."
-              className="w-full rounded-xl border bg-white py-3 pl-10 pr-4 text-sm outline-none ring-0 transition placeholder:text-gray-400 focus:border-gray-400 dark:border-neutral-700 dark:bg-neutral-900 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-neutral-500"
-            />
-          </div>
-          <button type="submit" className="rounded-xl border bg-white px-6 py-3 text-sm font-medium transition hover:bg-gray-100 active:bg-gray-800 active:text-white dark:border-neutral-700 dark:bg-neutral-900 dark:text-gray-200 dark:hover:bg-neutral-800 dark:active:bg-gray-200 dark:active:text-black">
-            Search
-          </button>
-        </form>
 
         <div className="mb-4 flex items-center gap-3">
           <button type="button" onClick={() => setShowSold(v => !v)}
