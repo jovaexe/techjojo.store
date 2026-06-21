@@ -33,16 +33,16 @@ export default function Footer({
             {/* left column */}
             <div className="flex flex-col flex-wrap gap-2 lg:flex-row lg:flex-nowrap">
               <Link
-                to="/gaminglaptops"
-                className="font-orbitron lowercase tracking-wide transition hover:text-gray-900 dark:hover:text-violet-300 dark:hover:drop-shadow-[0_0_8px_rgba(167,139,250,0.65)]"
-              >
-                gaming laptops
-              </Link>
-              <Link
                 to="/businesslaptops"
                 className="font-orbitron lowercase transition hover:text-gray-900 dark:hover:text-emerald-300 dark:hover:drop-shadow-[0_0_8px_rgba(16,185,129,0.55)]"
               >
                 business laptops
+              </Link>
+              <Link
+                to="/gaminglaptops"
+                className="font-orbitron lowercase tracking-wide transition hover:text-gray-900 dark:hover:text-violet-300 dark:hover:drop-shadow-[0_0_8px_rgba(167,139,250,0.65)]"
+              >
+                gaming laptops
               </Link>
               <Link
                 to="/macbooks"
@@ -55,16 +55,16 @@ export default function Footer({
             {/* middle column */}
             <div className="flex flex-col flex-wrap gap-2 lg:flex-row lg:flex-nowrap">
               <Link
-                to="/smartphones"
-                className="font-orbitron lowercase transition hover:text-gray-900 dark:hover:text-pink-200 dark:hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.35)]"
-              >
-                smartphones
-              </Link>
-              <Link
                 to="/desktops"
                 className="font-orbitron lowercase tracking-wide transition hover:text-gray-900 dark:hover:text-cyan-300 dark:hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.55)]"
               >
                 desktops
+              </Link>
+              <Link
+                to="/smartphones"
+                className="font-orbitron lowercase transition hover:text-gray-900 dark:hover:text-pink-200 dark:hover:drop-shadow-[0_0_8px_rgba(255,255,255,0.35)]"
+              >
+                smartphones
               </Link>
               <Link
                 to="/monitors"
