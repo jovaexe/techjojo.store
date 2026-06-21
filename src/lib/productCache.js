@@ -119,3 +119,4 @@ export function preloadAllProducts() {
   })();
   return loadPromise;
 }
+export { CSV_URLS };

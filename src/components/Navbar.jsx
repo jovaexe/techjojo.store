@@ -27,7 +27,7 @@ export default function Navbar() {
             type="button"
             onClick={() => navigate("/search")}
             aria-label="Search products"
-            className="inline-flex items-center gap-2 rounded-lg border border-gray-400 px-4 py-2 text-sm font-medium transition hover:bg-gray-100/80 dark:border-neutral-800 dark:text-gray-100 dark:hover:bg-neutral-900"
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-400 px-4 py-2 text-sm font-medium transition hover:bg-gray-100/80 active:bg-gray-800 active:text-white dark:border-neutral-800 dark:text-gray-100 dark:hover:bg-neutral-900 dark:active:bg-gray-200 dark:active:text-black"
           >
             <Search className="h-4 w-4" />
             Search

@@ -571,7 +571,6 @@ export default function ProductGrid({
   const topRef = useRef(null);
 
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [soldVersion, setSoldVersion] = useState(0);
 
   // Normalize each row & compute helpers
   const sourceItems = useMemo(() => {
@@ -620,71 +619,84 @@ export default function ProductGrid({
       o.__name = nameKey ? String(o[nameKey]) : "-";
       o.__brand = brandKey ? String(o[brandKey]) : "-";
       o.__img = imgKey ? String(o[imgKey]) : "-";
+      o.__fp = headers
+        .filter(h => !["id", "img", "image", "imageurl", "image_url"].includes(h.toLowerCase()))
+        .map(h => String(o[h] ?? ""))
+        .join("|||");
       return o;
     });
     return result;
   }, [activeRows, headers]);
 
-  // ——— Sold product tracking (stable key = name|brand) ———
-  function stableKey(p) {
-    return `${p.__name}|${p.__brand}`;
-  }
+  // ——— Sold product tracking (runs once per sourceItems change) ———
+  function soldId(p) { return p.__fp; }
 
-  useEffect(() => {
-    if (!sheetCsvUrl || !sourceItems.length || !headers.length) return;
-    const sourceKey = sheetCsvUrl.replace(/[^a-zA-Z0-9]/g, "_");
+  const { soldItems } = useMemo(() => {
+    if (!sheetCsvUrl || !sourceItems.length || !headers.length) return { soldItems: [] };
+    const sourceKey = sheetCsvUrl.replace(/[^a-zA-Z0-9]/g, "_") + "_v2";
     const backupKey = `tj_prod_${sourceKey}`;
     const soldKey = `tj_sold_${sourceKey}`;
+
     let backup = {};
     let sold = {};
     try { backup = JSON.parse(localStorage.getItem(backupKey) || "{}"); } catch {}
     try { sold = JSON.parse(localStorage.getItem(soldKey) || "{}"); } catch {}
-    const currentKeys = new Set(sourceItems.map(p => stableKey(p)));
+
+    const currentKeys = new Set(sourceItems.map(p => soldId(p)));
     let dirty = false;
+
+    // Remove sold marker if product is back
     for (const p of sourceItems) {
-      const key = stableKey(p);
-      if (sold[key]) { delete sold[key]; dirty = true; }
+      const k = soldId(p);
+      if (sold[k]) { delete sold[k]; dirty = true; }
     }
-    for (const p of sourceItems) {
-      const key = stableKey(p);
-      if (!backup[key]) { backup[key] = p; dirty = true; }
+
+    // Backup new products with their index
+    sourceItems.forEach((p, i) => {
+      const k = soldId(p);
+      if (!backup[k]) { backup[k] = { ...p, __index: i }; dirty = true; }
+    });
+
+    // Mark newly missing as sold
+    for (const k of Object.keys(backup)) {
+      if (!currentKeys.has(k) && !sold[k]) { sold[k] = { soldAt: Date.now() }; dirty = true; }
     }
-    for (const key of Object.keys(backup)) {
-      if (!currentKeys.has(key) && !sold[key]) { sold[key] = { soldAt: Date.now() }; dirty = true; }
-    }
+
+    // Clean expired (24h)
     const TTL = 24 * 60 * 60 * 1000;
     const now = Date.now();
-    for (const key of Object.keys(sold)) {
-      if (now - sold[key].soldAt >= TTL) { delete sold[key]; delete backup[key]; dirty = true; }
+    for (const k of Object.keys(sold)) {
+      if (now - sold[k].soldAt >= TTL) { delete sold[k]; delete backup[k]; dirty = true; }
     }
+
     if (dirty) {
       try { localStorage.setItem(backupKey, JSON.stringify(backup)); } catch {}
       try { localStorage.setItem(soldKey, JSON.stringify(sold)); } catch {}
-      setSoldVersion(v => v + 1);
     }
+
+    // Build sold display items
+    const items = [];
+    for (const [k, info] of Object.entries(sold)) {
+      if (now - info.soldAt < TTL && backup[k]) items.push({ ...backup[k], __sold: true });
+    }
+
+    return { soldItems: items };
   }, [sourceItems, headers, sheetCsvUrl]);
 
-  const soldItems = useMemo(() => {
-    if (!sheetCsvUrl || !headers.length) return [];
-    const sourceKey = sheetCsvUrl.replace(/[^a-zA-Z0-9]/g, "_");
+  // Merge sold items into sourceItems and sort by original position
+  const displayItems = useMemo(() => {
+    const sourceKey = sheetCsvUrl.replace(/[^a-zA-Z0-9]/g, "_") + "_v2";
     const backupKey = `tj_prod_${sourceKey}`;
-    const soldKey = `tj_sold_${sourceKey}`;
     let backup = {};
-    let sold = {};
     try { backup = JSON.parse(localStorage.getItem(backupKey) || "{}"); } catch {}
-    try { sold = JSON.parse(localStorage.getItem(soldKey) || "{}"); } catch {}
-    const TTL = 24 * 60 * 60 * 1000;
-    const now = Date.now();
-    const items = [];
-    for (const [key, info] of Object.entries(sold)) {
-      if (now - info.soldAt < TTL && backup[key]) items.push({ ...backup[key], __sold: true });
-    }
-    return items;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [headers, sheetCsvUrl, soldVersion]);
-
-  // Merge sold items into sourceItems for display
-  const displayItems = useMemo(() => [...sourceItems, ...soldItems], [sourceItems, soldItems]);
+    const indexed = sourceItems.map((p, i) => {
+      const k = soldId(p);
+      return { ...p, __index: backup[k]?.__index ?? i };
+    });
+    const combined = [...indexed, ...soldItems];
+    combined.sort((a, b) => (a.__index ?? Infinity) - (b.__index ?? Infinity));
+    return combined;
+  }, [sourceItems, soldItems, sheetCsvUrl]);
 
   // Build facets dynamically from headers (skip private/display-only fields)
   const facets = useMemo(() => {
@@ -1096,7 +1108,7 @@ export default function ProductGrid({
                   </button>
                   {p.__sold && (
                     <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                      <span className="-rotate-12 border-4 border-black px-6 py-3 font-['Montserrat'] text-2xl font-black tracking-[0.3em] text-black dark:border-white dark:text-white">
+                      <span className="-rotate-12 border-4 border-black px-6 py-3 font-['Montserrat'] text-2xl font-black tracking-[0.3em] border-white text-white">
                         SOLD
                       </span>
                     </div>

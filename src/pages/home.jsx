@@ -23,20 +23,21 @@ function CardContent({ children, className = "" }) {
 
 const tiles = [
   {
-    to: "/gaminglaptops",
-    title: "gaming laptops",
-    // Intel ° Nvidia ° RGB
-    subtitle: "Intel • Nvidia • RGB",
-    Icon: Laptop,
-    accent: "from-blue-500/20 to-blue-500/0 dark:from-blue-400/10 dark:to-transparent",
-  },
- 
-  {
     to: "/businesslaptops",
     title: "business laptops",
     subtitle: "HP •  Dell • Lenovo",
     Icon: Laptop2,
     accent: "from-emerald-500/20 to-emerald-500/0 dark:from-emerald-400/10 dark:to-transparent",
+    active: "active:bg-emerald-100 dark:active:bg-emerald-900/30",
+  },
+  {
+    to: "/gaminglaptops",
+    title: "gaming laptops",
+    // Intel ° Nvidia ° RGB
+    subtitle: "Intel • Nvidia • RGB",
+    Icon: Laptop,
+    accent: "from-blue-500/20 to-blue-500/0 dark:from-blue-400/10 dark:to-transparent",
+    active: "active:bg-blue-100 dark:active:bg-blue-900/30",
   },
    {
   to: "/macbooks",
@@ -45,6 +46,7 @@ const tiles = [
   subtitle: "Air • Pro • M1–M4",
   Icon: Laptop,
    accent: "from-slate-400/20 to-slate-400/0 dark:from-slate-300/10 dark:to-transparent",
+   active: "active:bg-slate-100 dark:active:bg-slate-900/30",
 },
   {
     to: "/desktops",
@@ -52,6 +54,7 @@ const tiles = [
     subtitle: "Towers • All-in-Ones • Mini PCs",
     Icon: Cable,
     accent: "from-amber-500/20 to-amber-500/0 dark:from-amber-400/10 dark:to-transparent",
+    active: "active:bg-amber-100 dark:active:bg-amber-900/30",
   },
  {
     to: "/smartphones",
@@ -60,6 +63,7 @@ const tiles = [
     Icon: Smartphone,
     accent:
       "from-violet-500/20 to-pink-500/0 dark:from-violet-400/10 dark:to-transparent",
+    active: "active:bg-violet-100 dark:active:bg-violet-900/30",
   },
   {
     to: "/monitors",
@@ -68,6 +72,7 @@ const tiles = [
     subtitle: "Samsung • AoC • High Refresh Rate",
     Icon: TvIcon,
     accent: "from-purple-500/20 to-purple-500/0 dark:from-purple-400/10 dark:to-transparent",
+    active: "active:bg-purple-100 dark:active:bg-purple-900/30",
   },
   {
     to: "/techaccessories",
@@ -76,6 +81,7 @@ const tiles = [
     subtitle: "Keyboard • Mouse •  Headset",
     Icon: Gamepad2,
     accent: "from-orange-500/20 to-amber-500/0 dark:from-orange-400/10 dark:to-transparent",
+    active: "active:bg-orange-100 dark:active:bg-orange-900/30",
   },
   {
   to: "/homeappliances",
@@ -83,6 +89,7 @@ const tiles = [
   subtitle: "Fridge • AC • TV",
   Icon: Refrigerator,
   accent: "from-cyan-500/20 to-teal-500/0 dark:from-cyan-400/10 dark:to-transparent",
+  active: "active:bg-cyan-100 dark:active:bg-cyan-900/30",
   },
 ]
 
@@ -97,9 +104,9 @@ export default function Home() {
 
         {/* Bento Grid */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {tiles.map(({ to, title, subtitle, Icon, accent }) => (
+          {tiles.map(({ to, title, subtitle, Icon, accent, active }) => (
             <Link key={to} to={to} className="group">
-              <Card className="relative h-48 overflow-hidden transition hover:shadow-lg">
+              <Card className={`relative h-48 overflow-hidden transition hover:shadow-lg dark:hover:shadow-white/10 ${active}`}>
                 <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${accent}`} />
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3">

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Search } from "lucide-react";
-import { getCachedProducts, onReady } from "../lib/productCache";
+import { getCachedProducts, onReady, CSV_URLS } from "../lib/productCache";
 
 // Emoji spec helpers (mirrors ProductGrid)
 const JUNK = new Set(["", "-", "—", "n/a", "na", "any", "null", "undefined"]);
@@ -248,6 +248,7 @@ export default function SearchPage() {
   const [ready, setReady] = useState(false);
   const [previewSrc, setPreviewSrc] = useState("");
   const [previewAlt, setPreviewAlt] = useState("");
+  const [showSold, setShowSold] = useState(false);
   const inputRef = useRef(null);
   const closePreview = () => { setPreviewSrc(""); setPreviewAlt(""); };
 
@@ -275,31 +276,74 @@ export default function SearchPage() {
     else setSearchParams({});
   };
 
+  // Load sold items from localStorage
+  const soldPool = useMemo(() => {
+    if (!showSold) return [];
+    const items = [];
+    const now = Date.now();
+    const TTL = 24 * 60 * 60 * 1000;
+    for (const { name, url } of CSV_URLS) {
+      const sourceKey = url.replace(/[^a-zA-Z0-9]/g, "_") + "_v2";
+      let backup = {}, sold = {};
+      try { backup = JSON.parse(localStorage.getItem(`tj_prod_${sourceKey}`) || "{}"); } catch {}
+      try { sold = JSON.parse(localStorage.getItem(sk) || "{}"); } catch {}
+      for (const [fp, info] of Object.entries(sold)) {
+        if (now - info.soldAt < TTL && backup[fp]) {
+          const b = backup[fp];
+          const headers = Object.keys(b).filter(k => !k.startsWith("__"));
+          const priceKey = headers.find(h => h.toLowerCase() === "price");
+          const nameKey = headers.find(h => h.toLowerCase() === "name");
+          const brandKey = headers.find(h => h.toLowerCase() === "brand");
+          const imgKey = headers.find(h => ["img", "image", "imageurl", "image_url"].includes(h.toLowerCase()));
+          items.push({
+            _raw: b,
+            _headers: headers,
+            _name: nameKey ? String(b[nameKey]) : b.__name || "-",
+            _brand: brandKey ? String(b[brandKey]) : b.__brand || "-",
+            _img: imgKey ? String(b[imgKey]) : b.__img || "-",
+            _price: priceKey ? b[priceKey] : "-",
+            _source: name,
+            __sold: true,
+          });
+        }
+      }
+    }
+    return items;
+  }, [showSold]);
+
+  const allProductsWithSold = useMemo(() => {
+    if (!showSold || !soldPool.length) return allProducts;
+    return [...allProducts, ...soldPool];
+  }, [allProducts, soldPool, showSold]);
+
   const filtered = useMemo(() => {
-    if (!query || !allProducts.length) return [];
+    if (!allProductsWithSold.length) return [];
+    if (!query && !showSold) return [];
+
     const needle = normalize(query);
 
     const scored = [];
-    for (const p of allProducts) {
-      const rawStr = Object.values(p._raw).map(v => normalize(String(v))).join(" ");
-      if (!rawStr.includes(needle)) continue;
+    for (const p of allProductsWithSold) {
+      if (needle) {
+        const rawStr = Object.values(p._raw).map(v => normalize(String(v))).join(" ");
+        if (!rawStr.includes(needle)) continue;
 
-      let score = 0;
-      // name match = most relevant
-      if (normalize(p._name).includes(needle)) score += 3;
-      // category/type or source group match = very relevant
-      if (normalize(p._source).includes(needle)) score += 2;
-      const catHeader = p._headers.find(h => h.toLowerCase() === "category" || h.toLowerCase() === "type");
-      if (catHeader && normalize(String(p._raw[catHeader] || "")).includes(needle)) score += 2;
-      // match in other fields = baseline
-      score += 1;
+        let score = 0;
+        if (normalize(p._name).includes(needle)) score += 3;
+        if (normalize(p._source).includes(needle)) score += 2;
+        const catHeader = p._headers.find(h => h.toLowerCase() === "category" || h.toLowerCase() === "type");
+        if (catHeader && normalize(String(p._raw[catHeader] || "")).includes(needle)) score += 2;
+        score += 1;
 
-      scored.push({ product: p, score });
+        scored.push({ product: p, score });
+      } else {
+        scored.push({ product: p, score: 0 });
+      }
     }
 
-    scored.sort((a, b) => b.score - a.score);
+    if (needle) scored.sort((a, b) => b.score - a.score);
     return scored.map(s => s.product);
-  }, [allProducts, query]);
+  }, [allProductsWithSold, query, showSold]);
 
   const grouped = useMemo(() => {
     const map = {};
@@ -331,10 +375,18 @@ export default function SearchPage() {
               className="w-full rounded-xl border bg-white py-3 pl-10 pr-4 text-sm outline-none ring-0 transition placeholder:text-gray-400 focus:border-gray-400 dark:border-neutral-700 dark:bg-neutral-900 dark:text-gray-100 dark:placeholder:text-gray-500 dark:focus:border-neutral-500"
             />
           </div>
-          <button type="submit" className="rounded-xl border bg-white px-6 py-3 text-sm font-medium transition hover:bg-gray-100 dark:border-neutral-700 dark:bg-neutral-900 dark:text-gray-200 dark:hover:bg-neutral-800">
+          <button type="submit" className="rounded-xl border bg-white px-6 py-3 text-sm font-medium transition hover:bg-gray-100 active:bg-gray-800 active:text-white dark:border-neutral-700 dark:bg-neutral-900 dark:text-gray-200 dark:hover:bg-neutral-800 dark:active:bg-gray-200 dark:active:text-black">
             Search
           </button>
         </form>
+
+        <div className="mb-4 flex items-center gap-3">
+          <button type="button" onClick={() => setShowSold(v => !v)}
+            className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${showSold ? "bg-gray-800 text-white dark:bg-gray-200 dark:text-black" : "bg-white text-gray-600 hover:bg-gray-100 dark:bg-neutral-900 dark:text-gray-400 dark:hover:bg-neutral-800"} dark:border-neutral-700`}
+          >
+            {showSold ? "Hide sold items" : "Show sold items"}
+          </button>
+        </div>
 
         {previewSrc && <ImagePreview src={previewSrc} alt={previewAlt} onClose={closePreview} />}
 
@@ -344,9 +396,15 @@ export default function SearchPage() {
           </div>
         )}
 
-        {ready && !query && (
+        {ready && !query && !showSold && (
           <div className="rounded-xl border bg-white p-10 text-center text-sm text-gray-500 dark:border-neutral-800 dark:bg-neutral-900 dark:text-gray-300">
             Enter a search term to find products across all categories.
+          </div>
+        )}
+
+        {ready && !query && showSold && filtered.length === 0 && (
+          <div className="rounded-xl border bg-white p-10 text-center text-sm text-gray-500 dark:border-neutral-800 dark:bg-neutral-900 dark:text-gray-300">
+            No sold items available.
           </div>
         )}
 
@@ -356,9 +414,11 @@ export default function SearchPage() {
           </div>
         )}
 
-        {ready && query && filtered.length > 0 && (
+        {ready && filtered.length > 0 && (query || showSold) && (
           <div className="mb-4 text-sm text-gray-500 dark:text-gray-400">
-            Found <b>{filtered.length}</b> result{filtered.length === 1 ? "" : "s"} for "{query}"
+            {query && showSold ? `Found ${filtered.length} result${filtered.length === 1 ? "" : "s"} for "${query}"` :
+             query ? `Found ${filtered.length} result${filtered.length === 1 ? "" : "s"} for "${query}"` :
+             `Showing ${filtered.length} sold item${filtered.length === 1 ? "" : "s"}`}
           </div>
         )}
 
@@ -373,9 +433,18 @@ export default function SearchPage() {
                 const waText = encodeURIComponent(`Hi! I'm interested in this product:\n${p._headers.filter(h => h.toLowerCase() !== "id").map(h => `• ${h}: ${p._raw[h]}`).join("\n")}`);
                 return (
                   <Card key={`${p._source}-${i}`} className="flex h-full flex-col overflow-hidden transition hover:shadow-lg">
-                    <button type="button" onClick={() => { if (p._img && p._img !== "-") { setPreviewSrc(p._img); setPreviewAlt(p._name); } }} className="block w-full cursor-zoom-in">
-                      <ImgWithLoader src={p._img !== "-" ? p._img : ""} alt={p._name} />
-                    </button>
+                    <div className="relative">
+                      <button type="button" onClick={() => { if (p._img && p._img !== "-") { setPreviewSrc(p._img); setPreviewAlt(p._name); } }} className="block w-full cursor-zoom-in">
+                        <ImgWithLoader src={p._img !== "-" ? p._img : ""} alt={p._name} />
+                      </button>
+                      {p.__sold && (
+                        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                          <span className="-rotate-12 border-4 border-white px-6 py-3 font-['Montserrat'] text-2xl font-black tracking-[0.3em] text-white">
+                            SOLD
+                          </span>
+                        </div>
+                      )}
+                    </div>
                     <div className="flex flex-1 flex-col space-y-3 p-4">
                       <div className="flex items-start justify-between gap-2">
                         <h3 className="text-base font-semibold">{p._name || "-"}</h3>
