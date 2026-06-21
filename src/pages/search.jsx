@@ -240,6 +240,11 @@ function Card({ children, className = "" }) {
   );
 }
 
+const GROUP_ORDER = [
+  "Business Laptops", "Gaming Laptops", "Macbooks", "Desktops",
+  "Monitors", "Tech Accessories", "Home Appliances", "Smartphones",
+];
+
 export default function SearchPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
@@ -286,7 +291,7 @@ export default function SearchPage() {
       const sourceKey = url.replace(/[^a-zA-Z0-9]/g, "_") + "_v2";
       let backup = {}, sold = {};
       try { backup = JSON.parse(localStorage.getItem(`tj_prod_${sourceKey}`) || "{}"); } catch {}
-      try { sold = JSON.parse(localStorage.getItem(sk) || "{}"); } catch {}
+      try { sold = JSON.parse(localStorage.getItem(`tj_sold_${sourceKey}`) || "{}"); } catch {}
       for (const [fp, info] of Object.entries(sold)) {
         if (now - info.soldAt < TTL && backup[fp]) {
           const b = backup[fp];
@@ -353,6 +358,16 @@ export default function SearchPage() {
     }
     return map;
   }, [filtered]);
+
+  const sortedGroups = useMemo(() => {
+    const entries = Object.entries(grouped);
+    entries.sort((a, b) => {
+      const ia = GROUP_ORDER.indexOf(a[0]);
+      const ib = GROUP_ORDER.indexOf(b[0]);
+      return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+    });
+    return entries;
+  }, [grouped]);
 
   return (
     <main className="min-h-screen bg-gray-50 text-gray-900 dark:bg-black dark:text-gray-100">
@@ -422,7 +437,7 @@ export default function SearchPage() {
           </div>
         )}
 
-        {ready && Object.entries(grouped).map(([source, products]) => (
+        {ready && sortedGroups.map(([source, products]) => (
           <div key={source} className="mb-8">
             <h2 className="mb-3 text-lg font-semibold text-gray-700 dark:text-gray-300">{source}</h2>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
