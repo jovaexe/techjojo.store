@@ -4,6 +4,21 @@ import { Link } from "react-router-dom";
 
 import PriceSlider from "./filters/PriceSlider";
 
+// ===== Category icons =====
+import { Laptop, Smartphone, Cable, Gamepad2, TvIcon, Laptop2, Refrigerator } from "lucide-react";
+
+const CATEGORY_ICONS = {
+  "business laptops": Laptop2,
+  "gaming laptops": Laptop,
+  macbooks: Laptop,
+  desktops: Cable,
+  smartphones: Smartphone,
+  monitors: TvIcon,
+  "tech accessories": Gamepad2,
+  "gaming accessories": Gamepad2,
+  "home appliances": Refrigerator,
+};
+
 // ===== Helpers =====
 function formatNaira(n) {
   try {
@@ -914,10 +929,13 @@ export default function ProductGrid({
             >
               ← Home
             </Link>
-            <h1 className="mt-2 text-3xl font-bold">{title}</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Browse through our catalogue
-            </p>
+            <h1 className="mt-2 flex items-center gap-3 text-3xl font-bold">
+              {(() => {
+                const Icon = CATEGORY_ICONS[title.toLowerCase()];
+                return Icon ? <Icon className="h-8 w-8" /> : null;
+              })()}
+              {title}
+            </h1>
           </div>
 
           <div className="flex items-center gap-3">
