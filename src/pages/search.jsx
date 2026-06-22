@@ -269,7 +269,7 @@ export default function SearchPage() {
     const now = Date.now();
     const TTL = 24 * 60 * 60 * 1000;
     for (const { name, url } of CSV_URLS) {
-      const sourceKey = url.replace(/[^a-zA-Z0-9]/g, "_") + "_v2";
+      const sourceKey = url.replace(/[^a-zA-Z0-9]/g, "_") + "_v3";
       let backup = {}, sold = {};
       try { backup = JSON.parse(localStorage.getItem(`tj_prod_${sourceKey}`) || "{}"); } catch {}
       try { sold = JSON.parse(localStorage.getItem(`tj_sold_${sourceKey}`) || "{}"); } catch {}

@@ -648,7 +648,7 @@ export default function ProductGrid({
 
   const { soldItems } = useMemo(() => {
     if (!sheetCsvUrl || !sourceItems.length || !headers.length) return { soldItems: [] };
-    const sourceKey = sheetCsvUrl.replace(/[^a-zA-Z0-9]/g, "_") + "_v2";
+    const sourceKey = sheetCsvUrl.replace(/[^a-zA-Z0-9]/g, "_") + "_v3";
     const backupKey = `tj_prod_${sourceKey}`;
     const soldKey = `tj_sold_${sourceKey}`;
 
@@ -681,7 +681,7 @@ export default function ProductGrid({
     const TTL = 24 * 60 * 60 * 1000;
     const now = Date.now();
     for (const k of Object.keys(sold)) {
-      if (now - sold[k].soldAt >= TTL) { delete sold[k]; delete backup[k]; dirty = true; }
+      if (now - sold[k].soldAt >= TTL) { delete sold[k]; dirty = true; }
     }
 
     if (dirty) {
@@ -700,7 +700,7 @@ export default function ProductGrid({
 
   // Merge sold items into sourceItems and sort by original position
   const displayItems = useMemo(() => {
-    const sourceKey = sheetCsvUrl.replace(/[^a-zA-Z0-9]/g, "_") + "_v2";
+    const sourceKey = sheetCsvUrl.replace(/[^a-zA-Z0-9]/g, "_") + "_v3";
     const backupKey = `tj_prod_${sourceKey}`;
     let backup = {};
     try { backup = JSON.parse(localStorage.getItem(backupKey) || "{}"); } catch {}
