@@ -1,6 +1,6 @@
 // src/components/ProductGrid.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 
 import PriceSlider from "./filters/PriceSlider";
 
@@ -586,6 +586,38 @@ export default function ProductGrid({
   const topRef = useRef(null);
 
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [copiedName, setCopiedName] = useState(null);
+  const [toastState, setToastState] = useState(null);
+
+  function shortId(fp) {
+    let hash = 0;
+    for (let i = 0; i < fp.length; i++) { hash = ((hash << 5) - hash) + fp.charCodeAt(i); hash |= 0; }
+    return "p" + Math.abs(hash).toString(36);
+  }
+
+  const [searchParams] = useSearchParams();
+  const focusId = searchParams.get("p");
+
+  useEffect(() => {
+    if (focusId) {
+      const el = document.getElementById(focusId.split("-")[0]);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+  }, [focusId]);
+
+  useEffect(() => {
+    if (!toastState) return;
+    if (toastState === "entering") {
+      const t = setTimeout(() => setToastState("visible"), 10);
+      return () => clearTimeout(t);
+    }
+    if (toastState === "closing") {
+      const r = setTimeout(() => { setCopiedName(null); setToastState(null); }, 300);
+      return () => clearTimeout(r);
+    }
+    const t = setTimeout(() => setToastState("closing"), 1700);
+    return () => clearTimeout(t);
+  }, [toastState]);
 
   // Normalize each row & compute helpers
   const sourceItems = useMemo(() => {
@@ -1118,7 +1150,8 @@ export default function ProductGrid({
             {current.map((p) => (
               <Card
                 key={p.__id}
-                className="flex h-full flex-col overflow-hidden transition hover:shadow-lg"
+                id={shortId(p.__fp)}
+                className="flex h-full flex-col overflow-hidden transition hover:shadow-lg scroll-mt-24"
               >
                 <div className="relative w-full overflow-hidden">
                   <button
@@ -1146,7 +1179,7 @@ export default function ProductGrid({
                 </div>
 
                 <div className="flex flex-1 flex-col space-y-3 p-4">
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex flex-wrap items-start justify-between gap-2">
                     <h3 className="text-base font-semibold">
                       {p.__name || "-"}
                     </h3>
@@ -1155,6 +1188,21 @@ export default function ProductGrid({
                         {p.__brand}
                       </span>
                     )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const sid = shortId(p.__fp);
+                        const slug = p.__name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
+                        const url = `${window.location.origin}${window.location.pathname}?p=${sid}-${slug}`;
+                        navigator.clipboard.writeText(url);
+                        setCopiedName(p.__name);
+                        setToastState("entering");
+                      }}
+                      title="Copy link to this product"
+                      className="shrink-0 rounded p-1 text-gray-400 transition hover:bg-gray-100 dark:hover:bg-neutral-800"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                    </button>
                   </div>
 
                   {/* Emoji spec list */}
@@ -1295,6 +1343,12 @@ export default function ProductGrid({
           </nav>
         </div>
       </section>
+
+      {toastState && (
+        <div className={`fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg border bg-white px-4 py-2.5 text-sm font-medium text-gray-800 shadow-lg transition-all duration-300 dark:border-neutral-700 dark:bg-neutral-900 dark:text-gray-200 ${toastState === "visible" ? "scale-100 opacity-100" : "scale-95 opacity-0"}`}>
+          Link Copied
+        </div>
+      )}
     </main>
   );
 }
