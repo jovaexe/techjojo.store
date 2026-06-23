@@ -1,8 +1,8 @@
 import { Link, useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import { Search } from "lucide-react";
-import { useState, useRef, useEffect } from "react";
-import { preloadAllProducts } from "../lib/productCache";
+import { useState, useRef, useEffect, useMemo } from "react";
+import { preloadAllProducts, getCachedProducts } from "../lib/productCache";
 
 const logo = {
   light: "/logo-transparent-inverted.png",
@@ -35,6 +35,34 @@ export default function Navbar() {
 
   const openSearch = () => { setSearchOpen(true); preloadAllProducts(); };
 
+  const suggestion = useMemo(() => {
+    if (!searchVal.trim()) return "";
+    const needle = searchVal.toLowerCase();
+    const cached = getCachedProducts();
+    if (!cached) return "";
+    let best = null;
+    for (const group of cached) {
+      for (const p of group.rows) {
+        const fields = [p._name?.toLowerCase(), p._brand?.toLowerCase()].filter(Boolean);
+        for (const f of fields) {
+          const idx = f.indexOf(needle);
+          if (idx === -1) continue;
+          if (!best || idx < best.idx || (idx === best.idx && f.length < best.len)) {
+            best = { name: p._name, idx, len: f.length };
+          }
+        }
+      }
+    }
+    return best ? best.name : "";
+  }, [searchVal]);
+
+  const handleKeyDown = (e) => {
+    if ((e.key === "Tab" || e.key === "ArrowRight") && suggestion) {
+      e.preventDefault();
+      setSearchVal(suggestion);
+    }
+  };
+
   const handleSearch = (e) => {
     e.preventDefault();
     const val = searchVal.trim();
@@ -64,13 +92,23 @@ export default function Navbar() {
             {searchOpen ? (
               <form onSubmit={handleSearch} className="flex items-center">
                 <Search className="ml-3 h-4 w-4 shrink-0 text-gray-400" />
-                <input
-                  ref={inputRef}
-                  value={searchVal}
-                  onChange={(e) => setSearchVal(e.target.value)}
-                  placeholder="Search products..."
-                  className="w-full bg-transparent py-2.5 pr-3 pl-2 text-sm outline-none text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
-                />
+                <div className="relative flex-1">
+                  <input
+                    ref={inputRef}
+                    value={searchVal}
+                    onChange={(e) => setSearchVal(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Search products..."
+                    className="relative z-10 w-full bg-transparent py-2.5 pr-3 text-sm outline-none text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                    style={{ background: "transparent" }}
+                  />
+                  {suggestion && searchVal && (
+                    <div className="pointer-events-none absolute inset-0 z-0 flex items-center py-2.5 pr-3 text-sm">
+                      <span className="invisible">{searchVal}</span>
+                      <span className="text-gray-300 dark:text-gray-600">{suggestion.slice(searchVal.length)}</span>
+                    </div>
+                  )}
+                </div>
               </form>
             ) : (
               <button
