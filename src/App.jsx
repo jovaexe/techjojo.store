@@ -44,7 +44,6 @@ export default function App() {
               <Route path="*" element={<PageNotFound />} />
             </Routes>
           </main>
-
           <Footer whatsAppNumber="+234 805 471 7837" />
         </div>
       </BrowserRouter>

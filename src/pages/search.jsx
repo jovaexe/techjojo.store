@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { getCachedProducts, onReady, CSV_URLS } from "../lib/productCache";
 
 // Emoji spec helpers (mirrors ProductGrid)
@@ -247,6 +247,13 @@ export default function SearchPage() {
   const [previewSrc, setPreviewSrc] = useState("");
   const [previewAlt, setPreviewAlt] = useState("");
   const [showSold, setShowSold] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterSource, setFilterSource] = useState(null);
+  const [filterBrand, setFilterBrand] = useState(null);
+  const [filterCondition, setFilterCondition] = useState(null);
+  const [filterSpecs, setFilterSpecs] = useState({});
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
   const closePreview = () => { setPreviewSrc(""); setPreviewAlt(""); };
   const [toastState, setToastState] = useState(null);
 
@@ -332,6 +339,12 @@ export default function SearchPage() {
     return "/" + source.toLowerCase().replace(/\s+/g, "");
   }
 
+  function cap(s) { return s.replace(/\b[a-z]/g, c => c.toUpperCase()); }
+  function labelize(h) {
+    const map = { cpu: "Processor", ram: "RAM", gpu: "GPU", ssd: "Storage", hdd: "Storage", display: "Display", screen: "Display", wifi: "Connectivity", bluetooth: "Connectivity" };
+    return map[h.toLowerCase()] || cap(h);
+  }
+
   const allProductsWithSold = useMemo(() => {
     if (!showSold || !soldPool.length) return allProducts;
     const soldNames = new Set(soldPool.map(p => `${p._name}|${p._brand}`));
@@ -358,13 +371,14 @@ export default function SearchPage() {
       const nameStr = normalize(p._name);
       const sourceStr = normalize(p._source);
       const brandStr = normalize(p._brand);
+      const wideStr = [rawStr, nameStr, sourceStr, brandStr].join(" ");
 
       // Exact match: phrase OR all words
-      const phraseMatch = rawStr.includes(needle);
-      const wordsMatch = words.every(w => rawStr.includes(w));
+      const phraseMatch = wideStr.includes(needle);
+      const wordsMatch = words.every(w => wideStr.includes(w));
 
       // Partial match: any word matches
-      const anyMatch = words.some(w => rawStr.includes(w));
+      const anyMatch = words.some(w => wideStr.includes(w));
 
       let score = 0;
       for (const w of words) {
@@ -392,14 +406,79 @@ export default function SearchPage() {
     return { filtered: results.map(s => ({ ...s.product, __fallback: useFallback })), isFallback: useFallback };
   }, [allProductsWithSold, query, showSold]);
 
-  const grouped = useMemo(() => {
+  const filteredBySidebar = useMemo(() => {
+    const noActive = !filterSource && !filterBrand && !filterCondition && !priceMin && !priceMax && !Object.keys(filterSpecs).length;
+    if (noActive) return filtered;
+    const pLo = priceMin ? +priceMin : -Infinity;
+    const pHi = priceMax ? +priceMax : Infinity;
+    return filtered.filter(p => {
+      if (filterSource && p._source !== filterSource) return false;
+      if (filterBrand && p._brand !== filterBrand) return false;
+      if (filterCondition) {
+        const cond = p._raw?.condition || "";
+        if (cond.toLowerCase() !== filterCondition.toLowerCase()) return false;
+      }
+      for (const [key, val] of Object.entries(filterSpecs)) {
+        const cell = String(p._raw[key] ?? "").toLowerCase();
+        if (!cell.includes(val.toLowerCase())) return false;
+      }
+      const pr = typeof p._price === "number" ? p._price : -1;
+      if (pr >= 0 && (pr < pLo || pr > pHi)) return false;
+      return true;
+    });
+  }, [filtered, filterSource, filterBrand, filterCondition, filterSpecs, priceMin, priceMax]);
+
+  const sources = useMemo(() => {
+    const s = new Set();
+    for (const p of filtered) s.add(p._source);
+    return [...s].sort();
+  }, [filtered]);
+
+  const brands = useMemo(() => {
+    const s = new Set();
+    for (const p of filtered) {
+      if (p._brand && p._brand !== "-") s.add(p._brand);
+    }
+    return [...s].sort();
+  }, [filtered]);
+
+  const conditions = useMemo(() => {
+    const s = new Set();
+    for (const p of filtered) {
+      const c = p._raw?.condition;
+      if (c && c !== "-") s.add(c);
+    }
+    return [...s].sort();
+  }, [filtered]);
+
+  const specFilters = useMemo(() => {
+    const skip = new Set(["id", "img", "image", "imageurl", "image_url", "name", "brand", "price", "amount", "cost", "ngn", "condition", "category", "type", "tags", "bundle", "delivery", "referral", "referral bonus", "description", "notes", "sku", "model"]);
     const map = {};
     for (const p of filtered) {
+      for (const h of p._headers) {
+        if (skip.has(h.toLowerCase())) continue;
+        const v = String(p._raw[h] ?? "").trim();
+        if (!v || v === "-" || v.length > 40) continue;
+        if (!map[h]) map[h] = new Set();
+        map[h].add(v);
+      }
+    }
+    const out = {};
+    for (const [h, vals] of Object.entries(map)) {
+      const arr = [...vals].sort();
+      if (arr.length > 1 && arr.length <= 20) out[h] = arr;
+    }
+    return out;
+  }, [filtered]);
+
+  const grouped = useMemo(() => {
+    const map = {};
+    for (const p of filteredBySidebar) {
       if (!map[p._source]) map[p._source] = [];
       map[p._source].push(p);
     }
     return map;
-  }, [filtered]);
+  }, [filteredBySidebar]);
 
   const sortedGroups = useMemo(() => {
     const entries = Object.entries(grouped);
@@ -411,30 +490,122 @@ export default function SearchPage() {
       });
     }
     const rankMap = {};
-    filtered.forEach((p, i) => {
+    filteredBySidebar.forEach((p, i) => {
       if (!(p._source in rankMap)) rankMap[p._source] = i;
     });
     entries.sort((a, b) => (rankMap[a[0]] ?? 999) - (rankMap[b[0]] ?? 999));
     return entries;
-  }, [grouped, filtered]);
+  }, [grouped, filteredBySidebar]);
 
   return (
     <main className="min-h-screen bg-gray-50 text-gray-900 dark:bg-black dark:text-gray-100">
       <section className="mx-auto max-w-6xl px-4 py-6">
-        <header className="mb-6">
-          <Link to="/" className="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs text-gray-700 hover:bg-gray-100 dark:border-neutral-700 dark:text-gray-200 dark:hover:bg-neutral-900">
-            ← Home
-          </Link>
-          <h1 className="mt-2 text-3xl font-bold">Search</h1>
+        <header className="mb-6 flex items-center justify-between">
+          <h1 className="text-3xl font-bold">Results</h1>
+          <button type="button" onClick={() => setShowFilters(v => !v)}
+            className="rounded-lg border px-3 py-1.5 text-xs font-medium transition lg:hidden bg-white text-gray-600 hover:bg-gray-100 dark:bg-neutral-900 dark:text-gray-400 dark:hover:bg-neutral-800 dark:border-neutral-700">
+            Filters
+          </button>
         </header>
 
-        <div className="mb-4 flex items-center gap-3">
-          <button type="button" onClick={() => setShowSold(v => !v)}
-            className={`rounded-lg border px-3 py-1.5 text-xs font-medium transition ${showSold ? "bg-gray-800 text-white dark:bg-gray-200 dark:text-black" : "bg-white text-gray-600 hover:bg-gray-100 dark:bg-neutral-900 dark:text-gray-400 dark:hover:bg-neutral-800"} dark:border-neutral-700`}
-          >
-            {showSold ? "Hide sold items" : "Show sold items"}
-          </button>
-        </div>
+        <div className="flex gap-6">
+          {/* Mobile backdrop */}
+          {showFilters && <div className="fixed inset-0 z-40 bg-black/40 transition-opacity duration-300 lg:hidden" style={{ top: "4rem" }} onClick={() => setShowFilters(false)} />}
+          {/* Sidebar filters */}
+          <aside className={`fixed left-0 top-16 z-50 flex h-[calc(100vh-4rem)] w-72 flex-col overflow-y-auto overscroll-contain transition-transform duration-300 lg:relative lg:top-0 lg:z-auto lg:block lg:h-auto lg:w-56 lg:shrink-0 lg:translate-x-0 lg:overscroll-auto ${showFilters ? "translate-x-0" : "-translate-x-full"}`}>
+            <div className="rounded-xl border bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900 lg:space-y-1">
+              <div className="mb-2 flex items-center justify-between lg:hidden">
+                <h2 className="text-sm font-semibold">Filters</h2>
+                <button onClick={() => setShowFilters(false)} className="rounded p-1 text-gray-500 hover:bg-gray-100 dark:hover:bg-neutral-800">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                </button>
+              </div>
+              <div className="mb-3 border-b pb-3 dark:border-neutral-700">
+                <button type="button" onClick={() => setShowSold(v => !v)}
+                  className={`w-full rounded-lg border px-3 py-1.5 text-xs font-medium transition ${showSold ? "bg-gray-800 text-white dark:bg-gray-200 dark:text-black" : "bg-white text-gray-600 hover:bg-gray-100 dark:bg-neutral-900 dark:text-gray-400 dark:hover:bg-neutral-800"} dark:border-neutral-700`}
+                >
+                  {showSold ? "Hide sold items" : "Show sold items"}
+                </button>
+              </div>
+              <details open>
+                <summary className="cursor-pointer text-sm font-semibold text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100">Category</summary>
+                  <div className="mt-1.5 space-y-0.5 pl-1">
+                    <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1.5 text-xs text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-neutral-800">
+                      <input type="radio" name="source" checked={!filterSource} onChange={() => setFilterSource(null)} className="accent-cyan-600" />
+                      All
+                    </label>
+                    {sources.map(s => (
+                      <label key={s} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1.5 text-xs text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-neutral-800">
+                        <input type="radio" name="source" checked={filterSource === s} onChange={() => setFilterSource(s)} className="accent-cyan-600" />
+                        {cap(s)}
+                      </label>
+                    ))}
+                  </div>
+              </details>
+              {brands.length > 0 && (
+              <details>
+                <summary className="cursor-pointer text-sm font-semibold text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100">Brand</summary>
+                <div className="mt-1.5 max-h-40 space-y-1 overflow-y-auto pl-1">
+                  <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1.5 text-xs text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-neutral-800">
+                    <input type="radio" name="brand" checked={!filterBrand} onChange={() => setFilterBrand(null)} className="accent-cyan-600" />
+                    All
+                  </label>
+                  {brands.map(b => (
+                    <label key={b} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1.5 text-xs text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-neutral-800">
+                      <input type="radio" name="brand" checked={filterBrand === b} onChange={() => setFilterBrand(b)} className="accent-cyan-600" />
+                      {cap(b)}
+                    </label>
+                  ))}
+                </div>
+              </details>
+              )}
+              {conditions.length > 0 && (
+              <details>
+                <summary className="cursor-pointer text-sm font-semibold text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100">Condition</summary>
+                <div className="mt-1.5 space-y-1 pl-1">
+                  <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1.5 text-xs text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-neutral-800">
+                    <input type="radio" name="condition" checked={!filterCondition} onChange={() => setFilterCondition(null)} className="accent-cyan-600" />
+                    All
+                  </label>
+                  {conditions.map(c => (
+                    <label key={c} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1.5 text-xs text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-neutral-800">
+                      <input type="radio" name="condition" checked={filterCondition === c} onChange={() => setFilterCondition(c)} className="accent-cyan-600" />
+                      {cap(c)}
+                    </label>
+                  ))}
+                </div>
+              </details>
+              )}
+              <details>
+                <summary className="cursor-pointer text-sm font-semibold text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100">Price</summary>
+                <div className="mt-1.5 flex items-center gap-2 pl-1 text-xs">
+                  <input type="number" value={priceMin} onChange={e => setPriceMin(e.target.value)} className="w-full rounded border bg-transparent px-2 py-1 text-gray-600 dark:border-neutral-700 dark:text-gray-400" placeholder="Min" />
+                  <span>—</span>
+                  <input type="number" value={priceMax} onChange={e => setPriceMax(e.target.value)} className="w-full rounded border bg-transparent px-2 py-1 text-gray-600 dark:border-neutral-700 dark:text-gray-400" placeholder="Max" />
+                </div>
+              </details>
+              {Object.entries(specFilters).map(([header, values]) => (
+                <details key={header}>
+                  <summary className="cursor-pointer text-sm font-semibold text-gray-700 hover:text-gray-900 dark:text-gray-300 dark:hover:text-gray-100">{labelize(header)}</summary>
+                  <div className="mt-1.5 space-y-1 pl-1">
+                    <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1.5 text-xs text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-neutral-800">
+                      <input type="radio" name={header} checked={!filterSpecs[header]} onChange={() => setFilterSpecs(s => { const n = {...s}; delete n[header]; return n; })} className="accent-cyan-600" />
+                      All
+                    </label>
+                    {values.map(v => (
+                      <label key={v} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1.5 text-xs text-gray-600 hover:bg-gray-50 dark:text-gray-400 dark:hover:bg-neutral-800">
+                        <input type="radio" name={header} checked={filterSpecs[header] === v} onChange={() => setFilterSpecs(s => ({...s, [header]: v}))} className="accent-cyan-600" />
+                        {cap(v)}
+                      </label>
+                    ))}
+                  </div>
+                </details>
+              ))}
+            </div>
+          </aside>
+
+          {/* Results */}
+          <div className="flex-1 min-w-0">
 
         {previewSrc && <ImagePreview src={previewSrc} alt={previewAlt} onClose={closePreview} />}
 
@@ -462,25 +633,25 @@ export default function SearchPage() {
           </div>
         )}
 
-        {isFallback && (
+        {isFallback && filteredBySidebar.length > 0 && (
           <div className="mb-4 rounded-xl border border-yellow-300 bg-yellow-100 p-4 text-sm text-yellow-800 dark:border-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-200">
             No exact matches found for "<strong>{query}</strong>". Here are similar products you might be interested in:
           </div>
         )}
 
-        {ready && filtered.length > 0 && (query || showSold) && (
+        {ready && filteredBySidebar.length > 0 && (query || showSold) && (
           <div className="mb-4 text-sm text-gray-500 dark:text-gray-400">
-            {isFallback ? `Showing ${filtered.length} similar product${filtered.length === 1 ? "" : "s"}` :
-             query && showSold ? `Found ${filtered.length} result${filtered.length === 1 ? "" : "s"} for "${query}"` :
-             query ? `Found ${filtered.length} result${filtered.length === 1 ? "" : "s"} for "${query}"` :
-             `Showing ${filtered.length} sold item${filtered.length === 1 ? "" : "s"}`}
+            {isFallback ? `Showing ${filteredBySidebar.length} similar product${filteredBySidebar.length === 1 ? "" : "s"}` :
+             query && showSold ? `Found ${filteredBySidebar.length} result${filteredBySidebar.length === 1 ? "" : "s"} for "${query}"` :
+             query ? `Found ${filteredBySidebar.length} result${filteredBySidebar.length === 1 ? "" : "s"} for "${query}"` :
+             `Showing ${filteredBySidebar.length} sold item${filteredBySidebar.length === 1 ? "" : "s"}`}
           </div>
         )}
 
         {ready && sortedGroups.map(([source, products]) => (
           <div key={source} className="mb-8">
             <h2 className="mb-3 text-lg font-semibold text-gray-700 dark:text-gray-300">{source}</h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {products.map((p, i) => {
                 const raw = p._price;
                 const priceText = typeof raw === "number" ? formatNaira(raw) : raw && raw !== "-" ? String(raw) : "Contact for price";
@@ -571,6 +742,8 @@ export default function SearchPage() {
             </div>
           </div>
         ))}
+          </div>
+        </div>
       </section>
 
       {toastState && (

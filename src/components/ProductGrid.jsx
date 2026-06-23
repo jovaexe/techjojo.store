@@ -1,6 +1,6 @@
 // src/components/ProductGrid.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 
 import PriceSlider from "./filters/PriceSlider";
 
@@ -20,6 +20,12 @@ const CATEGORY_ICONS = {
 };
 
 // ===== Helpers =====
+function cap(s) { return s.replace(/\b[a-z]/g, c => c.toUpperCase()); }
+function labelize(h) {
+  const map = { cpu: "Processor", ram: "RAM", gpu: "GPU", ssd: "Storage", hdd: "Storage", display: "Display", screen: "Display", wifi: "Connectivity", bluetooth: "Connectivity" };
+  return map[h.toLowerCase()] || cap(h);
+}
+
 function formatNaira(n) {
   try {
     return new Intl.NumberFormat("en-NG", {
@@ -986,12 +992,6 @@ export default function ProductGrid({
       >
         <header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <Link
-              to="/"
-              className="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-xs text-gray-700 hover:bg-gray-100 dark:border-neutral-700 dark:text-gray-200 dark:hover:bg-neutral-900"
-            >
-              ← Home
-            </Link>
             <h1 className="mt-2 flex items-center justify-center gap-3 text-center text-3xl font-bold font-orbitron text-gray-900 dark:text-gray-100">
               {(() => {
                 const Icon = CATEGORY_ICONS[title.toLowerCase()];
@@ -1130,7 +1130,7 @@ export default function ProductGrid({
                   .map((key) => (
                     <label key={key} className="flex flex-col gap-1 text-[11px]">
                       <span className="font-medium text-gray-700 dark:text-gray-300">
-                        {key}
+                        {labelize(key)}
                       </span>
                       <select
                         value={filters[key] || ""}
@@ -1139,9 +1139,7 @@ export default function ProductGrid({
                       >
                         <option value="">Any</option>
                         {(facets[key] || []).map((opt) => (
-                          <option key={opt} value={opt}>
-                            {opt}
-                          </option>
+                          <option key={opt} value={opt}>{cap(opt)}</option>
                         ))}
                       </select>
                     </label>

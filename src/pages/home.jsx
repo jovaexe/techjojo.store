@@ -101,7 +101,7 @@ export default function Home() {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {tiles.map(({ to, title, subtitle, Icon, accent, active }) => (
             <Link key={to} to={to} className="group">
-              <Card className={`relative h-48 overflow-hidden transition hover:shadow-lg dark:hover:shadow-white/10 ${active}`}>
+              <Card className={`relative h-48 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] dark:hover:shadow-white/10 ${active}`}>
                 <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${accent}`} />
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3">
