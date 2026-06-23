@@ -34,11 +34,10 @@ export default function Navbar() {
 
   const openSearch = () => setSearchOpen(true);
 
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      const val = searchVal.trim();
-      if (val) navigate(`/search?q=${encodeURIComponent(val)}`);
-    }
+  const handleSearch = (e) => {
+    e.preventDefault();
+    const val = searchVal.trim();
+    if (val) navigate(`/search?q=${encodeURIComponent(val)}`);
   };
 
   return (
@@ -62,17 +61,16 @@ export default function Navbar() {
             }`}
           >
             {searchOpen ? (
-              <div className="flex items-center">
+              <form onSubmit={handleSearch} className="flex items-center">
                 <Search className="ml-3 h-4 w-4 shrink-0 text-gray-400" />
                 <input
                   ref={inputRef}
                   value={searchVal}
                   onChange={(e) => setSearchVal(e.target.value)}
-                  onKeyDown={handleKeyDown}
                   placeholder="Search products..."
                   className="w-full bg-transparent py-2.5 pr-3 pl-2 text-sm outline-none text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                 />
-              </div>
+              </form>
             ) : (
               <button
                 onClick={openSearch}

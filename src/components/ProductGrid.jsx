@@ -941,6 +941,16 @@ export default function ProductGrid({
           </div>
 
           <div className="flex items-center gap-3">
+            {["business laptops", "gaming laptops", "desktops", "macbooks"].includes(title.toLowerCase()) && (
+              <a
+                href="https://titanium-quartz-2b0.notion.site/The-Games-Collection-37df6bf57ab48082ad69c822e53f01ea"
+                target="_blank"
+                rel="noreferrer"
+                className="shrink-0 rounded-lg border border-cyan-400 bg-cyan-50 px-3 py-1.5 text-xs font-medium text-cyan-700 transition hover:bg-cyan-100 dark:border-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300 dark:hover:bg-cyan-900/50"
+              >
+                🎮 Games
+              </a>
+            )}
             <div className="relative flex-1 sm:flex-none sm:w-80">
               <input
                 value={q}
