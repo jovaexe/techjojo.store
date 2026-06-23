@@ -324,9 +324,10 @@ function splitCsvLine(line) {
 }
 
 /* -------------------- UI building blocks -------------------- */
-function Card({ children, className = "" }) {
+function Card({ children, className = "", ...rest }) {
   return (
     <div
+      {...rest}
       className={
         "rounded-2xl border border-gray-200 shadow-sm " +
         "bg-white" +
@@ -598,19 +599,12 @@ export default function ProductGrid({
   const [searchParams] = useSearchParams();
   const focusId = searchParams.get("p");
   const [highlightId, setHighlightId] = useState(null);
+  const hasScrolled = useRef(null);
 
-  useEffect(() => {
-    if (focusId) {
-      const id = focusId.split("-")[0];
-      const el = document.getElementById(id);
-      if (el) {
-        el.scrollIntoView({ behavior: "smooth", block: "center" });
-        setHighlightId(id);
-        const t = setTimeout(() => setHighlightId(null), 2500);
-        return () => clearTimeout(t);
-      }
-    }
-  }, [focusId]);
+  // Reset hasScrolled when the URL product param changes
+  if (hasScrolled.current !== null && hasScrolled.current !== focusId) {
+    hasScrolled.current = null;
+  }
 
   useEffect(() => {
     if (!toastState) return;
@@ -841,8 +835,9 @@ export default function ProductGrid({
     return headerCount + priceActive;
   }, [filters, facets, sliderMin, sliderMax, priceMin, priceMax]);
 
-  // Reset page when search/filters change
+  // Reset page when search/filters change (but not when navigating to a product via URL)
   useEffect(() => {
+    if (focusId && hasScrolled.current !== focusId) return;
     setPage(1);
   }, [q, filters, sliderMin, sliderMax]);
 
@@ -892,6 +887,28 @@ export default function ProductGrid({
   const pageSafe = Math.min(page, pages);
   const start = (pageSafe - 1) * pageSizeSafe;
   const current = filtered.slice(start, start + pageSizeSafe);
+
+  // Scroll to and highlight product if URL has ?p=<shortId>
+  useEffect(() => {
+    if (!focusId || hasScrolled.current === focusId) return;
+    if (loading || !filtered.length) return;
+    const id = focusId.split("-")[0];
+    const idx = filtered.findIndex(p => shortId(p.__fp) === id);
+    if (idx === -1) return;
+    const targetPage = Math.floor(idx / pageSizeSafe) + 1;
+    if (targetPage !== pageSafe) {
+      setPage(targetPage);
+      return;
+    }
+    requestAnimationFrame(() => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      hasScrolled.current = focusId;
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setHighlightId(id);
+      setTimeout(() => setHighlightId(null), 2500);
+    });
+  }, [focusId, loading, filtered.length, pageSafe]);
 
   function scrollToTopOfProducts() {
     if (topRef.current) {
@@ -1158,7 +1175,7 @@ export default function ProductGrid({
               <Card
                 key={p.__id}
                 id={shortId(p.__fp)}
-                className={`flex h-full flex-col overflow-hidden transition-all duration-500 hover:shadow-lg scroll-mt-24 ${highlightId === shortId(p.__fp) ? "ring-2 ring-amber-400 shadow-lg shadow-amber-200/50 dark:ring-amber-500 dark:shadow-amber-900/50" : ""}`}
+                className={`flex h-full flex-col overflow-hidden transition-all duration-500 hover:shadow-lg scroll-mt-24 ${highlightId === shortId(p.__fp) ? "ring-2 ring-lime-400 shadow-lg shadow-lime-200/50 dark:ring-lime-500 dark:shadow-lime-900/50" : ""}`}
               >
                 <div className="relative w-full overflow-hidden">
                   <button
@@ -1186,32 +1203,15 @@ export default function ProductGrid({
                 </div>
 
                 <div className="flex flex-1 flex-col space-y-3 p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div className="flex items-start justify-between gap-2">
                     <h3 className="text-base font-semibold">
                       {p.__name || "-"}
                     </h3>
-                    <span className="flex shrink-0 items-center gap-1">
-                      {p.__brand && p.__brand !== "-" && (
-                        <span className="rounded-full border px-2.5 py-0.5 text-[11px] text-gray-600 dark:border-neutral-700 dark:text-gray-300">
-                          {p.__brand}
-                        </span>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const sid = shortId(p.__fp);
-                          const slug = p.__name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
-                          const url = `${window.location.origin}${window.location.pathname}?p=${sid}-${slug}`;
-                          navigator.clipboard.writeText(url);
-                          setCopiedName(p.__name);
-                          setToastState("entering");
-                        }}
-                        title="Copy link to this product"
-                        className="rounded p-1 text-gray-400 transition hover:bg-gray-100 dark:hover:bg-neutral-800"
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                      </button>
-                    </span>
+                    {p.__brand && p.__brand !== "-" && (
+                      <span className="shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] text-gray-600 dark:border-neutral-700 dark:text-gray-300">
+                        {p.__brand}
+                      </span>
+                    )}
                   </div>
 
                   {/* Emoji spec list */}
@@ -1280,6 +1280,22 @@ export default function ProductGrid({
                           {priceText}
                         </div>
 
+                        <div className="flex shrink-0 items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const sid = shortId(p.__fp);
+                            const slug = p.__name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
+                            const url = `${window.location.origin}${window.location.pathname}?p=${sid}-${slug}`;
+                            navigator.clipboard.writeText(url);
+                            setCopiedName(p.__name);
+                            setToastState("entering");
+                          }}
+                          title="Copy link to this product"
+                          className="rounded p-1.5 text-gray-400 transition hover:bg-gray-100 active:bg-gray-200 dark:hover:bg-neutral-800 dark:active:bg-neutral-700"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                        </button>
                         <a
                           href={waLinkForProduct(p, phoneDigitsOnly, headers)}
                           target="_blank"
@@ -1290,6 +1306,7 @@ export default function ProductGrid({
                           <span aria-hidden className="mr-1">📩</span>
                           Message
                         </a>
+                        </div>
                       </div>
                     );
                   })()}

@@ -248,6 +248,23 @@ export default function SearchPage() {
   const [previewAlt, setPreviewAlt] = useState("");
   const [showSold, setShowSold] = useState(false);
   const closePreview = () => { setPreviewSrc(""); setPreviewAlt(""); };
+  const [toastState, setToastState] = useState(null);
+
+  function shortId(fp) {
+    let hash = 0;
+    for (let i = 0; i < fp.length; i++) { hash = ((hash << 5) - hash) + fp.charCodeAt(i); hash |= 0; }
+    return "p" + Math.abs(hash).toString(36);
+  }
+
+  function productFp(p) {
+    const skip = new Set(["id", "img", "image", "imageurl", "image_url"]);
+    return p._headers.filter(h => !skip.has(h.toLowerCase())).map(h => {
+      const v = p._raw[h];
+      if (h.toLowerCase() === "price" && typeof v === "number") return String(v);
+      const s = cleanOne(v);
+      return s === "" ? "-" : s;
+    }).join("|||");
+  }
 
   useEffect(() => {
     if (getCachedProducts()) {
@@ -296,6 +313,24 @@ export default function SearchPage() {
     }
     return items;
   }, [showSold]);
+
+  useEffect(() => {
+    if (!toastState) return;
+    if (toastState === "entering") {
+      const t = setTimeout(() => setToastState("visible"), 10);
+      return () => clearTimeout(t);
+    }
+    if (toastState === "closing") {
+      const r = setTimeout(() => setToastState(null), 300);
+      return () => clearTimeout(r);
+    }
+    const t = setTimeout(() => setToastState("closing"), 1700);
+    return () => clearTimeout(t);
+  }, [toastState]);
+
+  function catPath(source) {
+    return "/" + source.toLowerCase().replace(/\s+/g, "");
+  }
 
   const allProductsWithSold = useMemo(() => {
     if (!showSold || !soldPool.length) return allProducts;
@@ -507,11 +542,28 @@ export default function SearchPage() {
 
                       <div className="mt-auto flex items-center justify-between gap-3">
                         <div className="text-sm font-bold"><span aria-hidden>💰</span> {priceText}</div>
+                        <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const fp = productFp(p);
+                            const sid = shortId(fp);
+                            const slug = p._name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
+                            const url = window.location.origin + catPath(p._source) + "?p=" + sid + "-" + slug;
+                            navigator.clipboard.writeText(url);
+                            setToastState("entering");
+                          }}
+                          title="Copy link to this product"
+                          className="rounded p-1.5 text-gray-400 transition hover:bg-gray-100 active:bg-gray-200 dark:hover:bg-neutral-800 dark:active:bg-neutral-700"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                        </button>
                         <a href={`https://wa.me/${waDigits}?text=${waText}`} target="_blank" rel="noreferrer"
                           className="inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 dark:border-neutral-700 dark:text-gray-200 dark:hover:bg-neutral-800">
                           <span aria-hidden className="mr-1">📩</span> Message
                         </a>
                       </div>
+                    </div>
                     </div>
                   </Card>
                 );
@@ -520,6 +572,12 @@ export default function SearchPage() {
           </div>
         ))}
       </section>
+
+      {toastState && (
+        <div className={`fixed bottom-6 left-1/2 z-50 -translate-x-1/2 rounded-lg border bg-white px-4 py-2.5 text-sm font-medium text-gray-800 shadow-lg transition-all duration-300 dark:border-neutral-700 dark:bg-neutral-900 dark:text-gray-200 ${toastState === "visible" ? "scale-100 opacity-100" : "scale-95 opacity-0"}`}>
+          Link Copied
+        </div>
+      )}
     </main>
   );
 }
