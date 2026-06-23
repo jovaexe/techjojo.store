@@ -2,7 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import { Search } from "lucide-react";
 import { useState, useRef, useEffect, useMemo } from "react";
-import { preloadAllProducts, getCachedProducts } from "../lib/productCache";
+import { preloadAllProducts, getCachedProducts, getCacheVersion } from "../lib/productCache";
 
 const logo = {
   light: "/logo-transparent-inverted.png",
@@ -54,7 +54,7 @@ export default function Navbar() {
       }
     }
     return best ? best.name : "";
-  }, [searchVal]);
+  }, [searchVal, getCacheVersion()]);
 
   const handleKeyDown = (e) => {
     if ((e.key === "Tab" || e.key === "ArrowRight") && suggestion) {
@@ -99,11 +99,11 @@ export default function Navbar() {
                     onChange={(e) => setSearchVal(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Search products..."
-                    className="relative z-10 w-full bg-transparent py-2.5 pr-3 text-sm outline-none text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
+                    className="relative z-10 w-full bg-transparent py-2.5 pl-[3px] pr-3 text-sm outline-none text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                     style={{ background: "transparent" }}
                   />
                   {suggestion && searchVal && (
-                    <div className="pointer-events-none absolute inset-0 z-0 flex items-center py-2.5 pr-3 text-sm">
+                    <div className="pointer-events-none absolute inset-0 z-0 flex items-center py-2.5 pl-[3px] pr-3 text-sm">
                       <span className="invisible">{searchVal}</span>
                       <span className="text-gray-300 dark:text-gray-600">{suggestion.slice(searchVal.length)}</span>
                     </div>

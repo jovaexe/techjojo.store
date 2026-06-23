@@ -63,6 +63,7 @@ let cache = null;
 let loading = false;
 let loadPromise = null;
 let listeners = [];
+let cacheVersion = 0;
 
 const CACHE_KEY = "tj_product_cache";
 
@@ -70,6 +71,8 @@ function notify() {
   listeners.forEach(fn => fn());
   listeners = [];
 }
+
+export function getCacheVersion() { return cacheVersion; }
 
 export function getCachedProducts() {
   return cache;
@@ -133,19 +136,19 @@ export function preloadAllProducts() {
   // Try cache first
   const cached = loadFromCache();
   if (cached) {
-    cache = cached;
+    cache = cached; cacheVersion++;
     loading = false;
     notify();
     // Still refresh in background
     fetchAll().then(fresh => {
-      if (fresh.length) { cache = fresh; saveToCache(fresh); }
+      if (fresh.length) { cache = fresh; cacheVersion++; saveToCache(fresh); }
     });
     return Promise.resolve(cached);
   }
 
   loading = true;
   loadPromise = fetchAll().then(results => {
-    cache = results;
+    cache = results; cacheVersion++;
     loading = false;
     if (results.length) saveToCache(results);
     notify();
