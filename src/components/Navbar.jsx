@@ -98,6 +98,11 @@ export default function Navbar() {
                     value={searchVal}
                     onChange={(e) => setSearchVal(e.target.value)}
                     onKeyDown={handleKeyDown}
+                    onClick={() => {
+                      if (document.activeElement === inputRef.current && suggestion) {
+                        setSearchVal(suggestion);
+                      }
+                    }}
                     placeholder="Search products..."
                     className="relative z-10 w-full bg-transparent py-2.5 pl-[3px] pr-3 text-sm outline-none text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                     style={{ background: "transparent" }}
