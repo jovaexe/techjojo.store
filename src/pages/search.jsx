@@ -485,7 +485,7 @@ export default function SearchPage() {
                 const raw = p._price;
                 const priceText = typeof raw === "number" ? formatNaira(raw) : raw && raw !== "-" ? String(raw) : "Contact for price";
                 const waDigits = "2348054717837";
-                const waText = encodeURIComponent(`Hi! I'm interested in this product:\n${p._headers.filter(h => h.toLowerCase() !== "id").map(h => `• ${h}: ${p._raw[h]}`).join("\n")}`);
+                const waText = encodeURIComponent(`Hi! I'm interested in this product:\n${p._headers.filter(h => h.toLowerCase() !== "id" && h.toLowerCase() !== "img").map(h => `• ${h}: ${p._raw[h]}`).join("\n")}\n• link: ${window.location.origin}${catPath(p._source)}?p=${shortId(productFp(p))}-${p._name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40)}`);
                 return (
                   <Card key={`${p._source}-${i}`} className="flex h-full flex-col overflow-hidden transition hover:shadow-lg">
                     <div className="relative">

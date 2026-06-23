@@ -1301,8 +1301,13 @@ export default function ProductGrid({
                         >
                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                         </button>
-                        <a
-                          href={waLinkForProduct(p, phoneDigitsOnly, headers)}
+                         <a
+                          href={(() => {
+                            const sid = shortId(p.__fp);
+                            const slug = p.__name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
+                            const productUrl = `${window.location.origin}${window.location.pathname}?p=${sid}-${slug}`;
+                            return waLinkForProduct(p, phoneDigitsOnly, headers, productUrl);
+                          })()}
                           target="_blank"
                           rel="noreferrer"
                           className="inline-flex items-center justify-center rounded-lg border px-2 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 dark:border-neutral-700 dark:text-gray-200 dark:hover:bg-neutral-800"
@@ -1385,11 +1390,12 @@ export default function ProductGrid({
 }
 
 // WhatsApp helpers (kept at bottom to avoid hoist noise)
-function productToWhatsAppText(p, headers) {
+function productToWhatsAppText(p, headers, productUrl) {
   const lines = ["Hi! I'm interested in this product:"];
   headers
     .filter((h) => h.toLowerCase() !== "id")
     .forEach((h) => {
+      if (h.toLowerCase() === "img") return;
       const v = p[h];
       const out =
         v == null || v === ""
@@ -1401,11 +1407,9 @@ function productToWhatsAppText(p, headers) {
           : String(v);
       lines.push(`• ${h}: ${out}`);
     });
+  if (productUrl) lines.push(`• link: ${productUrl}`);
   return encodeURIComponent(lines.join("\n"));
 }
-function waLinkForProduct(p, phoneDigitsOnly, headers) {
-  return `https://wa.me/${phoneDigitsOnly}?text=${productToWhatsAppText(
-    p,
-    headers,
-  )}`;
+function waLinkForProduct(p, phoneDigitsOnly, headers, productUrl) {
+  return `https://wa.me/${phoneDigitsOnly}?text=${productToWhatsAppText(p, headers, productUrl)}`;
 }
