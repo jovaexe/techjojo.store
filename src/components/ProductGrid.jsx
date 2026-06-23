@@ -1171,7 +1171,7 @@ export default function ProductGrid({
 
         <div className="space-y-1">
           {buildApplianceSpecs(p, headers).map((spec, i) => {
-            const isFree = spec.value && spec.label === "Delivery" && title.toLowerCase() !== "tech accessories";
+            const isFree = spec.value && spec.label === "Delivery";
             return (
             <div key={i} className="flex items-start gap-1.5 text-[12px]">
               <span aria-hidden>{spec.icon}</span>
@@ -1185,7 +1185,7 @@ export default function ProductGrid({
 
   {/* 🔹 Normal Emoji Specs AFTER */}
   {buildEmojiSpecs(p, headers).map(({ icon, label, text }, i) => {
-    const isFree = text && /bundle|freebies|extras|included|delivery|shipping/i.test(label) && title.toLowerCase() !== "tech accessories";
+    const isFree = text && /bundle|freebies|extras|included|delivery|shipping/i.test(label) && !(title.toLowerCase() === "tech accessories" && /bundle|freebies|extras|included/i.test(label));
     return (
     <div key={i} className="flex items-start gap-1.5">
       <span className="shrink-0 leading-5" aria-hidden>{icon}</span>
