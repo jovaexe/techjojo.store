@@ -19,18 +19,6 @@ const CATEGORY_ICONS = {
   "home appliances": Refrigerator,
 };
 
-const CATEGORY_COLORS = {
-  "business laptops": "text-emerald-600 dark:text-emerald-400",
-  "gaming laptops": "text-blue-600 dark:text-blue-400",
-  macbooks: "text-stone-600 dark:text-stone-400",
-  desktops: "text-amber-600 dark:text-amber-400",
-  smartphones: "text-rose-600 dark:text-rose-400",
-  monitors: "text-purple-600 dark:text-purple-400",
-  "tech accessories": "text-orange-600 dark:text-orange-400",
-  "gaming accessories": "text-blue-600 dark:text-blue-400",
-  "home appliances": "text-cyan-600 dark:text-cyan-400",
-};
-
 // ===== Helpers =====
 function formatNaira(n) {
   try {
@@ -943,7 +931,7 @@ export default function ProductGrid({
             >
               ← Home
             </Link>
-            <h1 className={`mt-2 flex items-center justify-center gap-3 text-center text-3xl font-bold font-orbitron ${CATEGORY_COLORS[title.toLowerCase()] || "text-gray-900 dark:text-gray-100"}`}>
+            <h1 className="mt-2 flex items-center justify-center gap-3 text-center text-3xl font-bold font-orbitron text-gray-900 dark:text-gray-100">
               {(() => {
                 const Icon = CATEGORY_ICONS[title.toLowerCase()];
                 return Icon ? <Icon className="h-8 w-8" /> : null;
@@ -1183,7 +1171,7 @@ export default function ProductGrid({
 
         <div className="space-y-1">
           {buildApplianceSpecs(p, headers).map((spec, i) => {
-            const isFree = spec.value && spec.label === "Delivery";
+            const isFree = spec.value && spec.label === "Delivery" && title.toLowerCase() !== "tech accessories";
             return (
             <div key={i} className="flex items-start gap-1.5 text-[12px]">
               <span aria-hidden>{spec.icon}</span>
@@ -1197,7 +1185,7 @@ export default function ProductGrid({
 
   {/* 🔹 Normal Emoji Specs AFTER */}
   {buildEmojiSpecs(p, headers).map(({ icon, label, text }, i) => {
-    const isFree = text && /bundle|freebies|extras|included|delivery|shipping/i.test(label);
+    const isFree = text && /bundle|freebies|extras|included|delivery|shipping/i.test(label) && title.toLowerCase() !== "tech accessories";
     return (
     <div key={i} className="flex items-start gap-1.5">
       <span className="shrink-0 leading-5" aria-hidden>{icon}</span>
