@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import { Search } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { preloadAllProducts } from "../lib/productCache";
 
 const logo = {
   light: "/logo-transparent-inverted.png",
@@ -32,7 +33,7 @@ export default function Navbar() {
     return () => document.removeEventListener("mousedown", handler);
   }, [searchOpen]);
 
-  const openSearch = () => setSearchOpen(true);
+  const openSearch = () => { setSearchOpen(true); preloadAllProducts(); };
 
   const handleSearch = (e) => {
     e.preventDefault();
