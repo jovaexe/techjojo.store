@@ -528,7 +528,7 @@ export default function SearchPage() {
                             </div>
                           )}
                         {buildEmojiSpecs(p._raw, p._headers).map(({ icon, label, text }, si) => {
-                          const isFree = text && /bundle|freebies|extras|included|delivery|shipping/i.test(label);
+                          const isFree = text && /bundle|freebies|extras|included|delivery|shipping/i.test(label) && !(p._source === "Tech Accessories" && /bundle|freebies|extras|included/i.test(label));
                           return (
                           <div key={si} className="flex items-start gap-1.5">
                             <span className="shrink-0 leading-5" aria-hidden>{icon}</span>
