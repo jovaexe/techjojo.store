@@ -34,7 +34,7 @@ export default function SmartphoneFilters(props) {
     },
     {
       key: "cpu",
-      label: "CPU",
+      label: "Processor",
       aliases: ["processor", "chipset"],
     },
     {

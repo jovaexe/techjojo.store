@@ -19,7 +19,7 @@ export default function BusinessLaptopFilters(props) {
   const rawKeys = [
     { key: "brand",     label: "Brand",     aliases: ["make", "manufacturer"] },
     { key: "display",   label: "Display",   aliases: ["screen", "screen size", "panel", "display size"] },
-    { key: "cpu",       label: "CPU",       aliases: ["processor", "chip", "processor model"] },
+    { key: "cpu",       label: "Processor",       aliases: ["processor", "chip", "processor model"] },
     { key: "ram",       label: "RAM",       aliases: ["memory", "system memory"] },
     { key: "storage",   label: "Storage",   aliases: ["ssd", "hdd", "drive", "disk"] },
     { key: "gpu",       label: "GPU",       aliases: ["graphics", "graphics card", "video", "graphics graphics"] },

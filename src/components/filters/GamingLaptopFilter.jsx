@@ -7,7 +7,7 @@ export default function GamingLaptopFilters(props) {
     { key: "brand", label: "Brand" },
     // { key: "price", label: "Price" },
     { key: "gpu", label: "GPU", aliases: ["graphics"] },
-    { key: "cpu", label: "CPU", aliases: ["processor"] },
+    { key: "cpu", label: "Processor", aliases: ["processor"] },
     { key: "ram", label: "RAM" },
     { key: "storage", label: "Storage", aliases: ["ssd", "hdd", "drive"] },
     { key: "display", label: "Display", aliases: ["screen", "screen size"] },

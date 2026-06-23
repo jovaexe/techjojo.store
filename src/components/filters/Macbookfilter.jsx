@@ -4,7 +4,7 @@ import FiltersBase from "./FiltersBase";
 export default function MacBookFilters(props) {
   const keys = [
     { key: "brand", label: "Brand" },
-    { key: "cpu", label: "CPU" },
+    { key: "cpu", label: "Processor" },
     { key: "gpu", label: "GPU" },
     { key: "display", label: "Display" },
     { key: "ram", label: "RAM" },

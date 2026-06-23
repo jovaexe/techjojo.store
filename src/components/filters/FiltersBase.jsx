@@ -152,7 +152,14 @@ export default function FiltersBase({
           )}
 
           {/* ---- CSV-backed filters ---- */}
-          {keys.map((entry) => {
+          {[...keys].sort((a, b) => {
+            const ka = typeof a === "string" ? a : a.key;
+            const kb = typeof b === "string" ? b : b.key;
+            const order = ["brand","display","screen","cpu","processor","ram","memory","storage","ssd","hdd","gpu","graphics","keyboard","connectivity","wifi","bluetooth","ports","refresh","hz","special_features","features","cellular","network","sim","build","material","adjustments","security","lock","battery","condition","capacity","size","volume","power","watt","wattage","control_type","controls","color","model","year","type","category","bundle","delivery","referral"];
+            const ia = order.indexOf(ka.toLowerCase());
+            const ib = order.indexOf(kb.toLowerCase());
+            return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+          }).map((entry) => {
             const cfg = typeof entry === "string" ? { key: entry } : entry;
             const { key, label } = cfg;
 
