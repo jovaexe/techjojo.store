@@ -1138,10 +1138,16 @@ export default function ProductGrid({
                 {headers
                   .filter(
                     (h) =>
-                      !["id", "img", "image", "imageurl", "image_url", "price", "amount", "cost", "ngn"].includes(
+                      !["id", "img", "image", "imageurl", "image_url", "price", "amount", "cost", "ngn", "name", "brand"].includes(
                         h.toLowerCase(),
                       ),
                   )
+                  .sort((a, b) => {
+                    const order = ["display","screen","cpu","processor","ram","memory","storage","ssd","hdd","gpu","graphics","keyboard","connectivity","wifi","bluetooth","ports","refresh","hz","special_features","features","cellular","network","sim","build","material","adjustments","security","lock","battery","condition","capacity","size","volume","power","watt","wattage","control_type","controls","color","model","year","type","category","bundle","delivery","referral"];
+                    const ia = order.indexOf(a.toLowerCase());
+                    const ib = order.indexOf(b.toLowerCase());
+                    return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+                  })
                   .map((key) => (
                     <label key={key} className="flex flex-col gap-1 text-[11px]">
                       <span className="font-medium text-gray-700 dark:text-gray-300">
