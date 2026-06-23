@@ -687,7 +687,7 @@ export default function ProductGrid({
 
   const { soldItems } = useMemo(() => {
     if (!sheetCsvUrl || !sourceItems.length || !headers.length) return { soldItems: [] };
-    const sourceKey = sheetCsvUrl.replace(/[^a-zA-Z0-9]/g, "_") + "_v3";
+    const sourceKey = sheetCsvUrl.replace(/[^a-zA-Z0-9]/g, "_") + "_v4";
     const backupKey = `tj_prod_${sourceKey}`;
     const soldKey = `tj_sold_${sourceKey}`;
 
@@ -699,10 +699,18 @@ export default function ProductGrid({
     const currentKeys = new Set(sourceItems.map(p => soldId(p)));
     let dirty = false;
 
-    // Remove sold marker if product is back
+    // Remove sold marker if product is back (by fp or matching specs)
     for (const p of sourceItems) {
       const k = soldId(p);
       if (sold[k]) { delete sold[k]; dirty = true; }
+    }
+    // Also remove sold markers if backup matches a current product on all non-name specs (handles edits)
+    const skipH = new Set(["id", "img", "image", "imageurl", "image_url", "name"]);
+    function specKey(p) { return headers.filter(h => !skipH.has(h.toLowerCase())).map(h => String(p[h] ?? "")).join("|||"); }
+    const currentSpecKeys = new Set(sourceItems.map(p => specKey(p)));
+    for (const k of Object.keys(sold)) {
+      const b = backup[k];
+      if (b && currentSpecKeys.has(specKey(b))) { delete sold[k]; dirty = true; }
     }
 
     // Backup new products with their index
@@ -739,7 +747,7 @@ export default function ProductGrid({
 
   // Merge sold items into sourceItems and sort by original position
   const displayItems = useMemo(() => {
-    const sourceKey = sheetCsvUrl.replace(/[^a-zA-Z0-9]/g, "_") + "_v3";
+    const sourceKey = sheetCsvUrl.replace(/[^a-zA-Z0-9]/g, "_") + "_v4";
     const backupKey = `tj_prod_${sourceKey}`;
     let backup = {};
     try { backup = JSON.parse(localStorage.getItem(backupKey) || "{}"); } catch {}
