@@ -597,11 +597,18 @@ export default function ProductGrid({
 
   const [searchParams] = useSearchParams();
   const focusId = searchParams.get("p");
+  const [highlightId, setHighlightId] = useState(null);
 
   useEffect(() => {
     if (focusId) {
-      const el = document.getElementById(focusId.split("-")[0]);
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      const id = focusId.split("-")[0];
+      const el = document.getElementById(id);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+        setHighlightId(id);
+        const t = setTimeout(() => setHighlightId(null), 2500);
+        return () => clearTimeout(t);
+      }
     }
   }, [focusId]);
 
@@ -1151,7 +1158,7 @@ export default function ProductGrid({
               <Card
                 key={p.__id}
                 id={shortId(p.__fp)}
-                className="flex h-full flex-col overflow-hidden transition hover:shadow-lg scroll-mt-24"
+                className={`flex h-full flex-col overflow-hidden transition-all duration-500 hover:shadow-lg scroll-mt-24 ${highlightId === shortId(p.__fp) ? "ring-2 ring-amber-400 shadow-lg shadow-amber-200/50 dark:ring-amber-500 dark:shadow-amber-900/50" : ""}`}
               >
                 <div className="relative w-full overflow-hidden">
                   <button
@@ -1183,26 +1190,28 @@ export default function ProductGrid({
                     <h3 className="text-base font-semibold">
                       {p.__name || "-"}
                     </h3>
-                    {p.__brand && p.__brand !== "-" && (
-                      <span className="shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] text-gray-600 dark:border-neutral-700 dark:text-gray-300">
-                        {p.__brand}
-                      </span>
-                    )}
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const sid = shortId(p.__fp);
-                        const slug = p.__name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
-                        const url = `${window.location.origin}${window.location.pathname}?p=${sid}-${slug}`;
-                        navigator.clipboard.writeText(url);
-                        setCopiedName(p.__name);
-                        setToastState("entering");
-                      }}
-                      title="Copy link to this product"
-                      className="shrink-0 rounded p-1 text-gray-400 transition hover:bg-gray-100 dark:hover:bg-neutral-800"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                    </button>
+                    <span className="flex shrink-0 items-center gap-1">
+                      {p.__brand && p.__brand !== "-" && (
+                        <span className="rounded-full border px-2.5 py-0.5 text-[11px] text-gray-600 dark:border-neutral-700 dark:text-gray-300">
+                          {p.__brand}
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const sid = shortId(p.__fp);
+                          const slug = p.__name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
+                          const url = `${window.location.origin}${window.location.pathname}?p=${sid}-${slug}`;
+                          navigator.clipboard.writeText(url);
+                          setCopiedName(p.__name);
+                          setToastState("entering");
+                        }}
+                        title="Copy link to this product"
+                        className="rounded p-1 text-gray-400 transition hover:bg-gray-100 dark:hover:bg-neutral-800"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-3.5 w-3.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                      </button>
+                    </span>
                   </div>
 
                   {/* Emoji spec list */}
