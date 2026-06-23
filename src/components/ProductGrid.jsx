@@ -687,7 +687,7 @@ export default function ProductGrid({
 
   const { soldItems } = useMemo(() => {
     if (!sheetCsvUrl || !sourceItems.length || !headers.length) return { soldItems: [] };
-    const sourceKey = sheetCsvUrl.replace(/[^a-zA-Z0-9]/g, "_") + "_v4";
+    const sourceKey = sheetCsvUrl.replace(/[^a-zA-Z0-9]/g, "_") + "_v5";
     const backupKey = `tj_prod_${sourceKey}`;
     const soldKey = `tj_sold_${sourceKey}`;
 
@@ -699,19 +699,17 @@ export default function ProductGrid({
     const currentKeys = new Set(sourceItems.map(p => soldId(p)));
     let dirty = false;
 
-    // Remove sold marker if product is back (by fp or matching specs)
+    // Remove sold marker if product is back (by fp)
     for (const p of sourceItems) {
       const k = soldId(p);
       if (sold[k]) { delete sold[k]; dirty = true; }
     }
-    // Also remove sold markers if backup matches a current product on all non-name specs (handles edits)
+
+    // Build a spec-key lookup (all headers except id/img/name) to detect edits
     const skipH = new Set(["id", "img", "image", "imageurl", "image_url", "name"]);
     function specKey(p) { return headers.filter(h => !skipH.has(h.toLowerCase())).map(h => String(p[h] ?? "")).join("|||"); }
-    const currentSpecKeys = new Set(sourceItems.map(p => specKey(p)));
-    for (const k of Object.keys(sold)) {
-      const b = backup[k];
-      if (b && currentSpecKeys.has(specKey(b))) { delete sold[k]; dirty = true; }
-    }
+    const currentSpecKeys = new Map();
+    for (const p of sourceItems) currentSpecKeys.set(specKey(p), p);
 
     // Backup new products with their index
     sourceItems.forEach((p, i) => {
@@ -719,9 +717,18 @@ export default function ProductGrid({
       if (!backup[k]) { backup[k] = { ...p, __index: i }; dirty = true; }
     });
 
-    // Mark newly missing as sold
+    // Mark newly missing as sold (skip if specs match a current product — likely an edit)
     for (const k of Object.keys(backup)) {
-      if (!currentKeys.has(k) && !sold[k]) { sold[k] = { soldAt: Date.now() }; dirty = true; }
+      if (currentKeys.has(k) || sold[k]) continue;
+      const b = backup[k];
+      if (b && currentSpecKeys.has(specKey(b))) {
+        // Product was edited — update backup to new fingerprint and skip sold
+        const newP = currentSpecKeys.get(specKey(b));
+        const newK = soldId(newP);
+        if (newK !== k) { delete backup[k]; backup[newK] = { ...newP, __index: b.__index }; dirty = true; }
+        continue;
+      }
+      sold[k] = { soldAt: Date.now() }; dirty = true;
     }
 
     // Clean expired (24h)
@@ -747,7 +754,7 @@ export default function ProductGrid({
 
   // Merge sold items into sourceItems and sort by original position
   const displayItems = useMemo(() => {
-    const sourceKey = sheetCsvUrl.replace(/[^a-zA-Z0-9]/g, "_") + "_v4";
+    const sourceKey = sheetCsvUrl.replace(/[^a-zA-Z0-9]/g, "_") + "_v5";
     const backupKey = `tj_prod_${sourceKey}`;
     let backup = {};
     try { backup = JSON.parse(localStorage.getItem(backupKey) || "{}"); } catch {}
