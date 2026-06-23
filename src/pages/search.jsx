@@ -479,25 +479,30 @@ export default function SearchPage() {
                             <div className="mb-2 rounded-lg p-2 dark:border-neutral-700">
                               <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Appliance Specs</div>
                               <div className="space-y-1">
-                                {buildApplianceSpecs(p._raw, p._headers).map((spec, si) => (
-                                  <div key={si} className="flex items-start gap-1.5 text-[12px]">
-                                    <span aria-hidden>{spec.icon}</span>
-                                     <span className="font-medium">{spec.label}:</span>
-                                     <span className="font-semibold text-gray-600 dark:text-gray-400">{formatApplianceValue(spec.value)}</span>
-                                  </div>
-                                ))}
+                        {buildApplianceSpecs(p._raw, p._headers).map((spec, si) => {
+                          const isFree = spec.value && spec.label === "Delivery";
+                          return (
+                            <div key={si} className="flex items-start gap-1.5 text-[12px]">
+                              <span aria-hidden>{spec.icon}</span>
+                              <span className="font-medium">{spec.label}:</span>
+                              <span className={`font-semibold ${isFree ? "text-cyan-600 dark:text-cyan-400" : "text-gray-600 dark:text-gray-400"}`}>{formatApplianceValue(spec.value)}</span>
+                            </div>
+                          );
+                        })}
                               </div>
                             </div>
                           )}
-                        {buildEmojiSpecs(p._raw, p._headers).map(({ icon, label, text }, si) => (
+                        {buildEmojiSpecs(p._raw, p._headers).map(({ icon, label, text }, si) => {
+                          const isFree = text && /bundle|freebies|extras|included|delivery|shipping/i.test(label);
+                          return (
                           <div key={si} className="flex items-start gap-1.5">
                             <span className="shrink-0 leading-5" aria-hidden>{icon}</span>
                              <div className="leading-5">
                               {label}
-                              {text ? <>{label.endsWith(":") ? " " : ": "}<span className="font-semibold text-gray-600 dark:text-gray-400">{text}</span></> : null}
+                              {text ? <>{label.endsWith(":") ? " " : ": "}<span className={`font-semibold ${isFree ? "text-cyan-600 dark:text-cyan-400" : "text-gray-600 dark:text-gray-400"}`}>{text}</span></> : null}
                             </div>
                           </div>
-                        ))}
+                        );})}
                       </div>
 
                       <div className="mt-auto flex items-center justify-between gap-3">
