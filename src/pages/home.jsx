@@ -14,7 +14,7 @@ function CardHeader({ children, className = "" }) {
   return <div className={`px-5 pt-5 ${className}`}>{children}</div>
 }
 function CardTitle({ children, className = "" }) {
-  return <h3 className={`text-lg font-semibold ${className}`}>{children}</h3>
+  return <h3 className={`text-lg font-semibold font-orbitron ${className}`}>{children}</h3>
 }
 function CardContent({ children, className = "" }) {
   return <div className={`px-5 pb-5 ${className}`}>{children}</div>

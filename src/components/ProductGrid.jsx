@@ -943,7 +943,7 @@ export default function ProductGrid({
             >
               ← Home
             </Link>
-            <h1 className={`mt-2 flex items-center justify-center gap-3 text-center text-3xl font-bold ${CATEGORY_COLORS[title.toLowerCase()] || "text-gray-900 dark:text-gray-100"}`}>
+            <h1 className={`mt-2 flex items-center justify-center gap-3 text-center text-3xl font-bold font-orbitron ${CATEGORY_COLORS[title.toLowerCase()] || "text-gray-900 dark:text-gray-100"}`}>
               {(() => {
                 const Icon = CATEGORY_ICONS[title.toLowerCase()];
                 return Icon ? <Icon className="h-8 w-8" /> : null;
