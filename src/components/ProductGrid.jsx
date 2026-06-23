@@ -19,6 +19,18 @@ const CATEGORY_ICONS = {
   "home appliances": Refrigerator,
 };
 
+const CATEGORY_COLORS = {
+  "business laptops": "text-emerald-600 dark:text-emerald-400",
+  "gaming laptops": "text-blue-600 dark:text-blue-400",
+  macbooks: "text-stone-600 dark:text-stone-400",
+  desktops: "text-amber-600 dark:text-amber-400",
+  smartphones: "text-rose-600 dark:text-rose-400",
+  monitors: "text-purple-600 dark:text-purple-400",
+  "tech accessories": "text-orange-600 dark:text-orange-400",
+  "gaming accessories": "text-blue-600 dark:text-blue-400",
+  "home appliances": "text-cyan-600 dark:text-cyan-400",
+};
+
 // ===== Helpers =====
 function formatNaira(n) {
   try {
@@ -931,7 +943,7 @@ export default function ProductGrid({
             >
               ← Home
             </Link>
-            <h1 className="mt-2 flex items-center gap-3 text-3xl font-bold">
+            <h1 className={`mt-2 flex items-center justify-center gap-3 text-center text-3xl font-bold ${CATEGORY_COLORS[title.toLowerCase()] || "text-gray-900 dark:text-gray-100"}`}>
               {(() => {
                 const Icon = CATEGORY_ICONS[title.toLowerCase()];
                 return Icon ? <Icon className="h-8 w-8" /> : null;
