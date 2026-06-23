@@ -741,10 +741,15 @@ export default function ProductGrid({
       const k = soldId(p);
       return { ...p, __index: backup[k]?.__index ?? i };
     });
-    const combined = [...indexed, ...soldItems];
-    combined.sort((a, b) => (a.__index ?? Infinity) - (b.__index ?? Infinity));
+    const combined = [...indexed, ...(loading ? [] : soldItems)];
+    const ph = findHeader(headers, ["price", "amount", "cost", "ngn", "price (ngn)"]);
+    combined.sort((a, b) => {
+      const pa = typeof a[ph] === "number" ? a[ph] : Infinity;
+      const pb = typeof b[ph] === "number" ? b[ph] : Infinity;
+      return pa - pb || (a.__index ?? Infinity) - (b.__index ?? Infinity);
+    });
     return combined;
-  }, [sourceItems, soldItems, sheetCsvUrl]);
+  }, [sourceItems, soldItems, sheetCsvUrl, loading]);
 
   // Build facets dynamically from headers (skip private/display-only fields)
   const facets = useMemo(() => {
@@ -1300,7 +1305,7 @@ export default function ProductGrid({
                           href={waLinkForProduct(p, phoneDigitsOnly, headers)}
                           target="_blank"
                           rel="noreferrer"
-                          className="inline-flex items-center justify-center rounded-lg border px-3 py-2 text-sm font-semibold text-gray-700 transition hover:bg-gray-100 dark:border-neutral-700 dark:text-gray-200 dark:hover:bg-neutral-800"
+                          className="inline-flex items-center justify-center rounded-lg border px-2 py-1 text-xs font-semibold text-gray-700 transition hover:bg-gray-100 dark:border-neutral-700 dark:text-gray-200 dark:hover:bg-neutral-800"
                           title={`WhatsApp: ${whatsAppNumber}`}
                         >
                           <span aria-hidden className="mr-1">📩</span>
