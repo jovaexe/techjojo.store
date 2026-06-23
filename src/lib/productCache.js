@@ -65,7 +65,6 @@ let loadPromise = null;
 let listeners = [];
 
 const CACHE_KEY = "tj_product_cache";
-const CACHE_TTL = 10 * 60 * 1000; // 10 minutes
 
 function notify() {
   listeners.forEach(fn => fn());
@@ -89,8 +88,7 @@ function loadFromCache() {
   try {
     const raw = localStorage.getItem(CACHE_KEY);
     if (!raw) return null;
-    const { timestamp, data } = JSON.parse(raw);
-    if (Date.now() - timestamp > CACHE_TTL) return null;
+    const { data } = JSON.parse(raw);
     return data;
   } catch { return null; }
 }
