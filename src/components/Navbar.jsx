@@ -2,6 +2,7 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "../context/ThemeContext";
 import { Search, Laptop, Smartphone, Cable, Gamepad2, TvIcon, Laptop2, Refrigerator, Menu } from "lucide-react";
 import { useState, useRef, useEffect, useMemo } from "react";
+import { createPortal } from "react-dom";
 import { getCachedProducts, getCacheVersion } from "../lib/productCache";
 
 const logo = {
@@ -15,9 +16,15 @@ export default function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchVal, setSearchVal] = useState("");
   const [catOpen, setCatOpen] = useState(false);
+  const [drawerClosing, setDrawerClosing] = useState(false);
   const inputRef = useRef(null);
   const containerRef = useRef(null);
   const catRef = useRef(null);
+
+  const closeDrawer = () => {
+    setDrawerClosing(true);
+    setTimeout(() => { setDrawerClosing(false); setCatOpen(false); }, 280);
+  };
 
   const categories = [
     { name: "Business Laptops", route: "/businesslaptops", icon: Laptop2 },
@@ -94,118 +101,128 @@ export default function Navbar() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-white/70 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:bg-black/70 dark:backdrop-blur-xl dark:supports-[backdrop-filter]:bg-black/60">
+    <>
+      <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-white/70 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:bg-black/70 dark:backdrop-blur-xl dark:supports-[backdrop-filter]:bg-black/60">
 
-      {/* ── Mobile layout (<lg) ── */}
-      <div className="mx-auto max-w-6xl px-4 lg:hidden">
-        <div className="flex h-14 items-center justify-between">
-          <div className="flex items-center gap-2">
+        {/* Mobile layout */}
+        <div className="mx-auto max-w-6xl px-4 lg:hidden">
+          <div className="flex h-14 items-center justify-between">
+            <div className="flex items-center gap-2">
+              <button type="button" onClick={(e) => { e.stopPropagation(); setCatOpen(true); }}
+                className="rounded-lg border border-gray-400 p-2.5 text-sm transition hover:bg-gray-100/80 active:bg-gray-200 dark:border-neutral-800 dark:hover:bg-neutral-900 dark:active:bg-neutral-700" aria-label="Categories">
+                <Menu className="h-4 w-4 text-gray-700 dark:text-gray-300" />
+              </button>
+              <Link to="/" className="flex items-center group">
+                <img src={logo[theme]} alt="techjojo" className="h-10 w-auto transition duration-300 group-hover:scale-105" />
+              </Link>
+            </div>
+            <button type="button" onClick={toggleTheme} aria-label="Toggle color mode"
+              className="rounded-lg border border-gray-400 px-3 py-2 text-sm transition hover:bg-gray-100/80 dark:border-neutral-800 dark:hover:bg-neutral-900">
+              <span className="block leading-none">{theme === "dark" ? "☀️" : "🌙"}</span>
+            </button>
+          </div>
+          <div className="pb-3">
+            <form onSubmit={handleSearch} className="flex items-center rounded-lg border bg-white px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900">
+              <Search className="h-4 w-4 shrink-0 text-gray-400" />
+              <div className="relative flex-1">
+                <input ref={inputRef} value={searchVal} onChange={(e) => setSearchVal(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  onClick={() => { if (document.activeElement === inputRef.current && suggestion) setSearchVal(suggestion); }}
+                  placeholder="Search All Products"
+                  className="w-full bg-transparent px-2 py-1 text-sm outline-none text-gray-900 placeholder:text-gray-400 dark:text-gray-100 dark:placeholder:text-gray-500" />
+                {suggestion && searchVal && (
+                  <div className="pointer-events-none absolute inset-0 z-0 flex items-center px-2 text-sm">
+                    <span className="invisible">{searchVal}</span>
+                    <span className="text-gray-300 dark:text-gray-600">{suggestion.slice(searchVal.length)}</span>
+                  </div>
+                )}
+              </div>
+            </form>
+          </div>
+        </div>
+
+        {/* Desktop layout */}
+        <div className="mx-auto hidden h-16 max-w-6xl items-center justify-between px-4 lg:flex">
+          <div className="flex items-center gap-3">
             <div className="relative" ref={catRef}>
-              <button type="button" onClick={() => setCatOpen(v => !v)}
-                className="rounded-lg border border-gray-400 p-2.5 text-sm transition hover:bg-gray-100/80 dark:border-neutral-800 dark:hover:bg-neutral-900" aria-label="Categories">
+              <button type="button" onClick={(e) => { e.stopPropagation(); setCatOpen(v => !v); }}
+                className="rounded-lg border border-gray-400 p-2.5 text-sm transition hover:bg-gray-100/80 active:bg-gray-200 dark:border-neutral-800 dark:hover:bg-neutral-900 dark:active:bg-neutral-700" aria-label="Categories">
                 <Menu className="h-4 w-4 text-gray-700 dark:text-gray-300" />
               </button>
               {catOpen && (
-                <div className="absolute left-0 top-full mt-1 w-48 rounded-xl border bg-white p-1.5 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
+                <div className="absolute left-0 top-full mt-1 z-50 w-48 rounded-xl border bg-white p-1.5 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
                   {categories.map(cat => {
                     const Icon = cat.icon;
                     const active = location.pathname === cat.route;
                     return (
-                      <Link key={cat.route} to={cat.route} onClick={() => setCatOpen(false)}
-                        className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition hover:bg-gray-100 dark:hover:bg-neutral-800 ${active ? "bg-gray-100 font-semibold dark:bg-neutral-800" : "text-gray-700 dark:text-gray-300"}`}>
+                      <button key={cat.route} type="button" onClick={() => { navigate(cat.route); setCatOpen(false); }}
+                        className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-left transition hover:bg-gray-100 dark:hover:bg-neutral-800 ${active ? "bg-gray-100 font-semibold dark:bg-neutral-800 dark:text-white" : "text-gray-700 dark:text-gray-300"}`}>
                         <Icon className="h-4 w-4" />
                         {cat.name}
-                      </Link>
+                      </button>
                     );
                   })}
                 </div>
               )}
             </div>
             <Link to="/" className="flex items-center group">
-              <img src={logo[theme]} alt="techjojo" className="h-10 w-auto transition duration-300 group-hover:scale-105" />
+              <img src={logo[theme]} alt="techjojo" className="h-11 w-auto transition duration-300 group-hover:scale-105" />
             </Link>
           </div>
-          <button type="button" onClick={toggleTheme} aria-label="Toggle color mode"
-            className="rounded-lg border border-gray-400 px-3 py-2 text-sm transition hover:bg-gray-100/80 dark:border-neutral-800 dark:hover:bg-neutral-900">
-            <span className="block leading-none">{theme === "dark" ? "☀️" : "🌙"}</span>
-          </button>
-        </div>
-        <div className="pb-3">
-          <form onSubmit={handleSearch} className="flex items-center rounded-lg border bg-white px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900">
-            <Search className="h-4 w-4 shrink-0 text-gray-400" />
-            <div className="relative flex-1">
-              <input ref={inputRef} value={searchVal} onChange={(e) => setSearchVal(e.target.value)}
-                onKeyDown={handleKeyDown}
-                onClick={() => { if (document.activeElement === inputRef.current && suggestion) setSearchVal(suggestion); }}
-                placeholder="Search All Products"
-                className="w-full bg-transparent px-2 py-1 text-sm outline-none text-gray-900 placeholder:text-gray-400 dark:text-gray-100 dark:placeholder:text-gray-500" />
-              {suggestion && searchVal && (
-                <div className="pointer-events-none absolute inset-0 z-0 flex items-center px-2 text-sm">
-                  <span className="invisible">{searchVal}</span>
-                  <span className="text-gray-300 dark:text-gray-600">{suggestion.slice(searchVal.length)}</span>
-                </div>
+          <nav className="flex items-center gap-1">
+            <div ref={containerRef}
+              className={`overflow-hidden rounded-lg border transition-all duration-300 ease-in-out ${searchOpen ? "w-60 border-gray-400 dark:border-neutral-500" : "w-48 border-gray-400 dark:border-neutral-800 hover:bg-gray-100/80 dark:hover:bg-neutral-900"}`}>
+              {searchOpen ? (
+                <form onSubmit={handleSearch} className="flex items-center">
+                  <Search className="ml-3 h-4 w-4 shrink-0 text-gray-400" />
+                  <div className="relative flex-1">
+                    <input ref={inputRef} value={searchVal} onChange={(e) => setSearchVal(e.target.value)}
+                      onKeyDown={handleKeyDown} placeholder="Search All Products"
+                      className="w-full bg-transparent py-2.5 pr-3 pl-2 text-sm outline-none text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500" />
+                  </div>
+                </form>
+              ) : (
+                <button onClick={openSearch}
+                  className="flex w-full items-center gap-2 px-4 py-2 text-sm font-medium whitespace-nowrap text-gray-900 transition dark:text-gray-100">
+                  <Search className="h-4 w-4" />
+                  Search All Products
+                </button>
               )}
             </div>
-          </form>
-        </div>
-      </div>
-
-      {/* ── Desktop layout (lg+) ── */}
-      <div className="mx-auto hidden h-16 max-w-6xl items-center justify-between px-4 lg:flex">
-        <div className="flex items-center gap-3">
-          <div className="relative" ref={catRef}>
-            <button type="button" onClick={() => setCatOpen(v => !v)}
-              className="rounded-lg border border-gray-400 p-2.5 text-sm transition hover:bg-gray-100/80 dark:border-neutral-800 dark:hover:bg-neutral-900" aria-label="Categories">
-              <Menu className="h-4 w-4 text-gray-700 dark:text-gray-300" />
+            <button type="button" onClick={toggleTheme} aria-label="Toggle color mode"
+              className="rounded-lg border border-gray-400 px-3 py-2 text-sm transition hover:bg-gray-100/80 dark:border-neutral-800 dark:hover:bg-neutral-900">
+              <span className="block leading-none">{theme === "dark" ? "☀️" : "🌙"}</span>
             </button>
-            {catOpen && (
-              <div className="absolute left-0 top-full mt-1 w-48 rounded-xl border bg-white p-1.5 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
-                {categories.map(cat => {
-                  const Icon = cat.icon;
-                  const active = location.pathname === cat.route;
-                  return (
-                    <Link key={cat.route} to={cat.route} onClick={() => setCatOpen(false)}
-                      className={`flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition hover:bg-gray-100 dark:hover:bg-neutral-800 ${active ? "bg-gray-100 font-semibold dark:bg-neutral-800" : "text-gray-700 dark:text-gray-300"}`}>
-                      <Icon className="h-4 w-4" />
-                      {cat.name}
-                    </Link>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-          <Link to="/" className="flex items-center group">
-            <img src={logo[theme]} alt="techjojo" className="h-11 w-auto transition duration-300 group-hover:scale-105" />
-          </Link>
+          </nav>
         </div>
 
-        <nav className="flex items-center gap-1">
-          <div ref={containerRef}
-            className={`overflow-hidden rounded-lg border transition-all duration-300 ease-in-out ${searchOpen ? "w-60 border-gray-400 dark:border-neutral-500" : "w-48 border-gray-400 dark:border-neutral-800 hover:bg-gray-100/80 dark:hover:bg-neutral-900"}`}>
-            {searchOpen ? (
-              <form onSubmit={handleSearch} className="flex items-center">
-                <Search className="ml-3 h-4 w-4 shrink-0 text-gray-400" />
-                <div className="relative flex-1">
-                  <input ref={inputRef} value={searchVal} onChange={(e) => setSearchVal(e.target.value)}
-                    onKeyDown={handleKeyDown} placeholder="Search All Products"
-                    className="w-full bg-transparent py-2.5 pr-3 pl-2 text-sm outline-none text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500" />
-                </div>
-              </form>
-            ) : (
-              <button onClick={openSearch}
-                className="flex w-full items-center gap-2 px-4 py-2 text-sm font-medium whitespace-nowrap text-gray-900 transition dark:text-gray-100">
-                <Search className="h-4 w-4" />
-                Search All Products
-              </button>
-            )}
-          </div>
-          <button type="button" onClick={toggleTheme} aria-label="Toggle color mode"
-            className="rounded-lg border border-gray-400 px-3 py-2 text-sm transition hover:bg-gray-100/80 dark:border-neutral-800 dark:hover:bg-neutral-900">
-            <span className="block leading-none">{theme === "dark" ? "☀️" : "🌙"}</span>
-          </button>
-        </nav>
-      </div>
+      </header>
 
-    </header>
+      {(catOpen || drawerClosing) && createPortal(
+        <div className="fixed inset-0 z-[999] pointer-events-auto lg:hidden" style={{ animation: drawerClosing ? "drawerFadeOut 0.25s ease-in forwards" : "drawerFadeIn 0.2s ease-out" }}>
+          <div className="absolute inset-0 bg-black/40 pointer-events-auto" onClick={closeDrawer} onTouchEnd={(e) => { e.preventDefault(); closeDrawer(); }} />
+          <nav className="absolute left-0 top-0 bottom-0 flex w-64 flex-col border-r bg-white p-4 shadow-xl pointer-events-auto dark:border-neutral-700 dark:bg-neutral-900" style={{ touchAction: "manipulation", animation: drawerClosing ? "drawerSlideOut 0.25s ease-in forwards" : "drawerSlideIn 0.25s ease-out" }}>
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Categories</h2>
+              <button onClick={closeDrawer} type="button" className="rounded p-1 text-gray-500 hover:bg-gray-100 dark:hover:bg-neutral-800">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+              </button>
+            </div>
+            <div className="flex-1 space-y-0.5 overflow-y-auto pointer-events-auto">
+              {categories.map(cat => {
+                const Icon = cat.icon;
+                const active = location.pathname === cat.route;
+                return (
+                  <button key={cat.route} type="button" onTouchEnd={(e) => { e.preventDefault(); window.location.href = cat.route; }} onClick={() => { window.location.href = cat.route; }}
+                    className={`pointer-events-auto flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-left transition hover:bg-gray-100 active:bg-gray-200 dark:hover:bg-neutral-800 dark:active:bg-neutral-700 ${active ? "bg-gray-100 font-semibold dark:bg-neutral-800 dark:text-white" : "text-gray-700 dark:text-gray-300"}`}>
+                    <Icon className="h-5 w-5" />
+                    {cat.name}
+                  </button>
+                );
+              })}
+            </div>
+          </nav>
+        </div>, document.body)}
+    </>
   );
 }

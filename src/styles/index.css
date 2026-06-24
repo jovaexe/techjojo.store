@@ -66,4 +66,20 @@
     @apply bg-background text-foreground;
   }
 }
- 
+
+@keyframes drawerFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes drawerSlideIn {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+@keyframes drawerFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes drawerSlideOut {
+  from { transform: translateX(0); }
+  to { transform: translateX(-100%); }
+} 
