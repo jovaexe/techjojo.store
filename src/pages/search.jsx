@@ -378,6 +378,21 @@ export default function SearchPage() {
         return { removes: match[0], adds: { field: "gpu", pattern: new RegExp(match[0], "i") } };
       }
     },
+    // "core i5", "core i7", "core i9", "core i3" → CPU constraint
+    {
+      regex: /^core\s+i[3579]$/i,
+      expand(match) {
+        const model = match[0].replace(/\s+/, "\\s*");
+        return { removes: match[0], adds: { field: "cpu", pattern: new RegExp(model, "i") } };
+      }
+    },
+    // Bare "i5", "i7", "i9", "i3" → CPU constraint
+    {
+      regex: /^i[3579]$/i,
+      expand(match) {
+        return { removes: match[0], adds: { field: "cpu", pattern: new RegExp(match[0], "i") } };
+      }
+    },
   ];
 
   const TERM_ALIASES = {
