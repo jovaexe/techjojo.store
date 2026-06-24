@@ -58,15 +58,6 @@
   }
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-}
-
 @keyframes drawerFadeIn {
   from { opacity: 0; }
   to { opacity: 1; }

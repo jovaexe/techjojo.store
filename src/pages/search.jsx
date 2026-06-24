@@ -345,6 +345,97 @@ export default function SearchPage() {
     return map[h.toLowerCase()] || cap(h);
   }
 
+  // ─── Query expansion: translate human terms into structured constraints ───
+  const PATTERN_RULES = [
+    {
+      // "10th gen", "8th gen", "12th gen" etc.
+      regex: /^(\d+)(?:st|nd|rd|th)\s*gen(?:eration)?$/i,
+      expand(match) {
+        const gen = parseInt(match[1]);
+        return { removes: match[0], adds: { field: "cpu", pattern: new RegExp(`-${gen}\\d{2,}`, "i") } };
+      }
+    },
+    {
+      // "30 series", "40 series", "20 series"
+      regex: /^([1-9]\d?)0\s*series$/i,
+      expand(match) {
+        const family = match[1];
+        return { removes: match[0], adds: { field: "gpu", pattern: new RegExp(`${family}0[5-9]0`, "i") } };
+      }
+    },
+  ];
+
+  const TERM_ALIASES = {
+    desktop: "desktops", mac: "macbooks", macbook: "macbooks",
+    phone: "smartphones", mobile: "smartphones", monitor: "monitors",
+    accessory: "accessories", tech: "accessories",
+  };
+
+  const SPEC_HEADER_ALIASES = {
+    cpu: ["cpu", "processor", "chip", "processor model"],
+    gpu: ["gpu", "graphics", "graphics card", "video"],
+    ram: ["ram", "memory", "system memory"],
+    storage: ["storage", "ssd", "hdd", "drive", "disk"],
+    display: ["display", "screen", "screen size", "panel"],
+  };
+
+  function findHeader(headers, candidates) {
+    const lowers = headers.map(h => h.toLowerCase());
+    for (const c of candidates) {
+      const i = lowers.indexOf(String(c).toLowerCase());
+      if (i !== -1) return headers[i];
+    }
+    return null;
+  }
+
+  function expandQuery(rawQuery) {
+    const normalized = rawQuery.toLowerCase().trim();
+    let tokens = normalized.split(/\s+/).filter(Boolean);
+    const specConstraints = [];
+
+    // Apply alias substitutions
+    tokens = tokens.map(t => TERM_ALIASES[t] ?? t);
+
+    // Apply pattern rules on consecutive token windows
+    const expandedTokens = [];
+    let i = 0;
+    while (i < tokens.length) {
+      let matched = false;
+      for (const windowSize of [3, 2, 1]) {
+        const phrase = tokens.slice(i, i + windowSize).join(" ");
+        for (const rule of PATTERN_RULES) {
+          const m = phrase.match(rule.regex);
+          if (m) {
+            const result = rule.expand(m);
+            if (result.adds) specConstraints.push(result.adds);
+            i += windowSize;
+            matched = true;
+            break;
+          }
+        }
+        if (matched) break;
+      }
+      if (!matched) { expandedTokens.push(tokens[i]); i++; }
+    }
+
+    return { coreTerms: expandedTokens, specConstraints };
+  }
+
+  function productMatchesSpecConstraints(p, specConstraints) {
+    for (const constraint of specConstraints) {
+      const header = findHeader(p._headers, SPEC_HEADER_ALIASES[constraint.field] || [constraint.field]);
+      if (!header) return false;
+      const rawValue = String(p._raw[header] ?? "");
+      if (constraint.pattern) {
+        if (!constraint.pattern.test(rawValue)) return false;
+      } else {
+        const ok = constraint.matchesAny.some(term => rawValue.toLowerCase().includes(term));
+        if (!ok) return false;
+      }
+    }
+    return true;
+  }
+
   const allProductsWithSold = useMemo(() => {
     if (!showSold || !soldPool.length) return allProducts;
     const soldNames = new Set(soldPool.map(p => `${p._name}|${p._brand}`));
@@ -359,51 +450,74 @@ export default function SearchPage() {
     const needle = normalize(query);
     const words = needle ? needle.split(/\s+/).filter(Boolean) : [];
 
-    const exactScored = [];
-    const partialScored = [];
-    for (const p of allProductsWithSold) {
-      if (!words.length) {
-        exactScored.push({ product: p, score: 0 });
-        continue;
-      }
+    // Apply query expansion
+    const { coreTerms, specConstraints } = expandQuery(query);
+    const expandedNeedle = coreTerms.join(" ");
 
-      const rawStr = normalize(Object.values(p._raw).join(" "));
-      const nameStr = normalize(p._name);
-      const sourceStr = normalize(p._source);
-      const brandStr = normalize(p._brand);
-      const wideStr = [rawStr, nameStr, sourceStr, brandStr].join(" ");
-
-      // Exact match: phrase OR all words
-      const phraseMatch = wideStr.includes(needle);
-      const wordsMatch = words.every(w => wideStr.includes(w));
-
-      // Partial match: any word matches
-      const anyMatch = words.some(w => wideStr.includes(w));
-
-      let score = 0;
-      for (const w of words) {
-        if (nameStr.includes(w)) score += 3;
-        if (brandStr.includes(w)) score += 2;
-        if (sourceStr.includes(w)) score += 8;
-        score += 1;
-      }
-
-      if (nameStr.includes(needle)) score += 5;
-      if (brandStr.includes(needle)) score += 3;
-      if (sourceStr.includes(needle)) score += 6;
-      if (rawStr.includes(needle)) score += 2;
-
-      if (phraseMatch || wordsMatch) {
-        exactScored.push({ product: p, score });
-      } else if (anyMatch) {
-        partialScored.push({ product: p, score: score / 2 });
+    // Determine which core terms are "meaningful"
+    const meaningfulWords = new Set(coreTerms);
+    if (coreTerms.length > 1) {
+      for (const w of coreTerms) {
+        let found = false;
+        for (const p of allProductsWithSold) {
+          const nameF = normalize(p._name);
+          const brandF = normalize(p._brand);
+          if (nameF.includes(w) || brandF.includes(w)) { found = true; break; }
+        }
+        if (!found) meaningfulWords.delete(w);
       }
     }
 
-    const useFallback = needle && exactScored.length === 0 && partialScored.length > 0;
-    const results = useFallback ? partialScored : exactScored;
-    if (needle) results.sort((a, b) => b.score - a.score);
-    return { filtered: results.map(s => ({ ...s.product, __fallback: useFallback })), isFallback: useFallback };
+    const skipSpecs = new Set(["id", "img", "image", "imageurl", "image_url", "name", "brand", "price", "amount", "cost", "ngn"]);
+    const FIELD_W = { name: 10, brand: 6, category: 4, specs: 0.3 };
+
+    const results = [];
+    for (const p of allProductsWithSold) {
+      // Expand query applies spec constraints BEFORE scoring
+      if (!productMatchesSpecConstraints(p, specConstraints)) continue;
+
+      if (!coreTerms.length) { results.push({ product: p, score: 0, isExact: true }); continue; }
+
+      const nameF  = normalize(p._name);
+      const brandF = normalize(p._brand);
+      const catF   = normalize(p._source);
+      const specF  = normalize(p._headers.filter(h => !skipSpecs.has(h.toLowerCase())).map(h => String(p._raw[h] ?? "")).join(" "));
+
+      let allCore = true;
+      let total = 0;
+
+      for (const w of coreTerms) {
+        const nameHit  = nameF.includes(w);
+        const brandHit = brandF.includes(w);
+        const catHit   = catF.includes(w);
+        const specHit  = specF.includes(w);
+        const coreHit  = nameHit || brandHit || catHit;
+
+        if (meaningfulWords.has(w) && !coreHit) allCore = false;
+
+        if (nameHit)  total += FIELD_W.name;
+        if (brandHit) total += FIELD_W.brand;
+        if (catHit)   total += FIELD_W.category;
+        if (!coreHit && specHit) total += FIELD_W.specs;
+      }
+
+      if (total <= 0) continue;
+      if (allCore) total += 20;
+
+      const fullQ = coreTerms.join(" ");
+      if (nameF.includes(fullQ))  total += 15;
+      if (brandF.includes(fullQ)) total += 8;
+      if (catF.includes(fullQ))   total += 5;
+      if (specF.includes(fullQ))  total += 1;
+
+      results.push({ product: p, score: total, isExact: allCore });
+    }
+
+    const exactResults = results.filter(r => r.isExact);
+    const useFallback = coreTerms.length > 0 && exactResults.length === 0 && results.length > 0;
+    const displayed = useFallback ? results : exactResults.length ? exactResults : results;
+    if (coreTerms.length) displayed.sort((a, b) => b.score - a.score);
+    return { filtered: displayed.map(s => ({ ...s.product, __fallback: useFallback })), isFallback: useFallback };
   }, [allProductsWithSold, query, showSold]);
 
   const filteredBySidebar = useMemo(() => {

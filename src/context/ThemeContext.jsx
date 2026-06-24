@@ -8,7 +8,6 @@ function getInitialTheme() {
     const saved = localStorage.getItem(THEME_KEY);
     if (saved === "light" || saved === "dark") return saved;
   } catch {}
-  // fallback to system
   return window.matchMedia &&
     window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"
@@ -20,23 +19,16 @@ export function ThemeProvider({ children }) {
 
   useEffect(() => {
     const root = document.documentElement;
-    // apply class for Tailwind or CSS hooks
     root.classList.toggle("dark", theme === "dark");
-    // also expose as a data attribute if you want to style via CSS variables
     root.setAttribute("data-theme", theme);
-    try {
-      localStorage.setItem(THEME_KEY, theme);
-    } catch {}
+    try { localStorage.setItem(THEME_KEY, theme); } catch {}
   }, [theme]);
 
-  const value = useMemo(
-    () => ({
-      theme,
-      setTheme,
-      toggleTheme: () => setTheme((t) => (t === "dark" ? "light" : "dark")),
-    }),
-    [theme]
-  );
+  const value = useMemo(() => ({
+    theme,
+    setTheme,
+    toggleTheme: () => setTheme(t => (t === "dark" ? "light" : "dark")),
+  }), [theme]);
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

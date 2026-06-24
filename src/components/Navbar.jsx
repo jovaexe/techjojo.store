@@ -9,6 +9,7 @@ const logo = {
   light: "/logo-transparent-inverted.png",
   dark: "/logo-transparent.webp",
 };
+function logoFor(t) { return logo[t === "dark" ? "dark" : "light"]; }
 
 export default function Navbar() {
   const { theme, toggleTheme } = useTheme();
@@ -69,22 +70,32 @@ export default function Navbar() {
   const suggestion = useMemo(() => {
     if (!searchVal.trim()) return "";
     const needle = searchVal.toLowerCase();
+    const words = needle.split(/\s+/).filter(Boolean);
+    if (!words.length) return "";
+
+    // Intent-based category detection from cached products
     const cached = getCachedProducts();
-    if (!cached) return "";
-    let best = null;
-    for (const group of cached) {
-      for (const p of group.rows) {
-        const fields = [p._name?.toLowerCase(), p._brand?.toLowerCase()].filter(Boolean);
-        for (const f of fields) {
-          const idx = f.indexOf(needle);
-          if (idx === -1) continue;
-          if (!best || idx < best.idx || (idx === best.idx && f.length < best.len)) {
-            best = { name: p._name, idx, len: f.length };
-          }
+    if (cached) {
+      const counts = {};
+      for (const group of cached) {
+        for (const p of group.rows) {
+          const nameF = (p._name || "").toLowerCase();
+          const brandF = (p._brand || "").toLowerCase();
+          const coreHit = words.every(w => nameF.includes(w) || brandF.includes(w));
+          if (!coreHit) continue;
+          const cat = p._source || "unknown";
+          counts[cat] = (counts[cat] || 0) + 1;
         }
       }
+      const bestCat = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
+      if (bestCat) {
+        const catLower = bestCat.toLowerCase();
+        // If typed text starts with a letter, keep it as-is; otherwise just append category
+        return needle + " " + catLower;
+      }
     }
-    return best ? best.name : "";
+
+    return "";
   }, [searchVal, getCacheVersion()]);
 
   const handleKeyDown = (e) => {
@@ -113,7 +124,7 @@ export default function Navbar() {
                 <Menu className="h-4 w-4 text-gray-700 dark:text-gray-300" />
               </button>
               <Link to="/" className="flex items-center group">
-                <img src={logo[theme]} alt="techjojo" className="h-10 w-auto transition duration-300 group-hover:scale-105" />
+                <img src={logoFor(theme)} alt="techjojo" className="h-10 w-auto transition duration-300 group-hover:scale-105" />
               </Link>
             </div>
             <button type="button" onClick={toggleTheme} aria-label="Toggle color mode"
@@ -130,12 +141,12 @@ export default function Navbar() {
                   onClick={() => { if (document.activeElement === inputRef.current && suggestion) setSearchVal(suggestion); }}
                   placeholder="Search All Products"
                   className="w-full bg-transparent px-2 py-1 text-sm outline-none text-gray-900 placeholder:text-gray-400 dark:text-gray-100 dark:placeholder:text-gray-500" />
-                {suggestion && searchVal && (
-                  <div className="pointer-events-none absolute inset-0 z-0 flex items-center px-2 text-sm">
-                    <span className="invisible">{searchVal}</span>
-                    <span className="text-gray-300 dark:text-gray-600">{suggestion.slice(searchVal.length)}</span>
-                  </div>
-                )}
+                 {suggestion && searchVal && (
+                   <div className="pointer-events-none absolute inset-0 z-0 flex items-center text-sm pl-2">
+                     <span className="invisible">{searchVal}</span>
+                     <span className="text-gray-300 dark:text-gray-600">{suggestion.slice(searchVal.length)}</span>
+                   </div>
+                 )}
               </div>
             </form>
           </div>
@@ -166,7 +177,7 @@ export default function Navbar() {
               )}
             </div>
             <Link to="/" className="flex items-center group">
-              <img src={logo[theme]} alt="techjojo" className="h-11 w-auto transition duration-300 group-hover:scale-105" />
+              <img src={logoFor(theme)} alt="techjojo" className="h-11 w-auto transition duration-300 group-hover:scale-105" />
             </Link>
           </div>
           <nav className="flex items-center gap-1">
@@ -175,11 +186,19 @@ export default function Navbar() {
               {searchOpen ? (
                 <form onSubmit={handleSearch} className="flex items-center">
                   <Search className="ml-3 h-4 w-4 shrink-0 text-gray-400" />
-                  <div className="relative flex-1">
-                    <input ref={inputRef} value={searchVal} onChange={(e) => setSearchVal(e.target.value)}
-                      onKeyDown={handleKeyDown} placeholder="Search All Products"
-                      className="w-full bg-transparent py-2.5 pr-3 pl-2 text-sm outline-none text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500" />
-                  </div>
+                   <div className="relative flex-1">
+                     <input ref={inputRef} value={searchVal} onChange={(e) => setSearchVal(e.target.value)}
+                       onKeyDown={handleKeyDown}
+                       onClick={() => { if (document.activeElement === inputRef.current && suggestion) setSearchVal(suggestion); }}
+                       placeholder="Search All Products"
+                       className="w-full bg-transparent py-2.5 pr-3 pl-2 text-sm outline-none text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500" />
+                     {suggestion && searchVal && (
+                       <div className="pointer-events-none absolute inset-0 z-0 flex items-center py-2.5 pr-3 pl-2 text-sm">
+                         <span className="invisible">{searchVal}</span>
+                         <span className="text-gray-300 dark:text-gray-600">{suggestion.slice(searchVal.length)}</span>
+                       </div>
+                     )}
+                   </div>
                 </form>
               ) : (
                 <button onClick={openSearch}
