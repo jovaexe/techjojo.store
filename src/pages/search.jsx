@@ -363,6 +363,14 @@ export default function SearchPage() {
         return { removes: match[0], adds: { field: "gpu", pattern: new RegExp(`${family}0[5-9]0`, "i") } };
       }
     },
+    // GPU model number like "RTX 3060", "GTX 1650" → match as a paired token
+    {
+      regex: /^(rtx|gtx|quadro|radeon)\s*(\d{3,4})$/i,
+      expand(match) {
+        const model = match[0];
+        return { removes: match[0], adds: { field: "gpu", pattern: new RegExp(model.replace(/ /, "\\s*"), "i") } };
+      }
+    },
   ];
 
   const TERM_ALIASES = {
@@ -469,7 +477,7 @@ export default function SearchPage() {
     }
 
     const skipSpecs = new Set(["id", "img", "image", "imageurl", "image_url", "name", "brand", "price", "amount", "cost", "ngn"]);
-    const FIELD_W = { name: 10, brand: 6, category: 4, specs: 0.3 };
+    const FIELD_W = { name: 10, brand: 6, category: 4, specs: 2 };
 
     const results = [];
     for (const p of allProductsWithSold) {
