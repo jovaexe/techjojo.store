@@ -371,6 +371,13 @@ export default function SearchPage() {
         return { removes: match[0], adds: { field: "gpu", pattern: new RegExp(model.replace(/ /, "\\s*"), "i") } };
       }
     },
+    // Bare GPU number like "3060", "1650", "4060" → match as GPU constraint
+    {
+      regex: /^(\d{1,2})0[5-9]0$/i,
+      expand(match) {
+        return { removes: match[0], adds: { field: "gpu", pattern: new RegExp(match[0], "i") } };
+      }
+    },
   ];
 
   const TERM_ALIASES = {
