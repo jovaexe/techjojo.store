@@ -489,6 +489,37 @@ export default function SearchPage() {
     return [...filtered, ...soldPool];
   }, [allProducts, soldPool, showSold]);
 
+  function searchWithoutConstraints(products, coreTerms, meaningfulWords, FIELD_W) {
+    const skipSpecs = new Set(["id", "img", "image", "imageurl", "image_url", "name", "brand", "price", "amount", "cost", "ngn"]);
+    const r = [];
+    for (const p of products) {
+      if (!coreTerms.length) { r.push({ product: p, score: 0, isExact: true }); continue; }
+      const nameF = normalize(p._name);
+      const brandF = normalize(p._brand);
+      const catF = normalize(p._source);
+      const specF = normalize(p._headers.filter(h => !skipSpecs.has(h.toLowerCase())).map(h => String(p._raw[h] ?? "")).join(" "));
+      let allCore = true, total = 0;
+      for (const w of coreTerms) {
+        const nameHit = nameF.includes(w), brandHit = brandF.includes(w), catHit = catF.includes(w), specHit = specF.includes(w), coreHit = nameHit || brandHit || catHit;
+        if (meaningfulWords.has(w) && !coreHit) allCore = false;
+        if (nameHit) total += FIELD_W.name;
+        if (brandHit) total += FIELD_W.brand;
+        if (catHit) total += FIELD_W.category;
+        if (!coreHit && specHit) total += FIELD_W.specs;
+      }
+      if (total <= 0) continue;
+      if (allCore) total += 20;
+      const fullQ = coreTerms.join(" ");
+      if (nameF.includes(fullQ)) total += 15;
+      if (brandF.includes(fullQ)) total += 8;
+      if (catF.includes(fullQ)) total += 5;
+      if (specF.includes(fullQ)) total += 1;
+      if (nameF.startsWith(fullQ)) total += 25;
+      r.push({ product: p, score: total, isExact: allCore });
+    }
+    return r;
+  }
+
   const { filtered, isFallback } = useMemo(() => {
     if (!allProductsWithSold.length) return { filtered: [], isFallback: false };
     if (!query && !showSold) return { filtered: [], isFallback: false };
@@ -498,7 +529,6 @@ export default function SearchPage() {
 
     // Apply query expansion
     const { coreTerms, specConstraints } = expandQuery(query);
-    const expandedNeedle = coreTerms.join(" ");
 
     // Determine which core terms are "meaningful"
     const meaningfulWords = new Set(coreTerms);
@@ -519,9 +549,7 @@ export default function SearchPage() {
 
     const results = [];
     for (const p of allProductsWithSold) {
-      // Expand query applies spec constraints BEFORE scoring
-      if (!productMatchesSpecConstraints(p, specConstraints)) continue;
-
+      if (specConstraints.length && !productMatchesSpecConstraints(p, specConstraints)) continue;
       if (!coreTerms.length) { results.push({ product: p, score: 0, isExact: true }); continue; }
 
       const nameF  = normalize(p._name);
@@ -555,13 +583,19 @@ export default function SearchPage() {
       if (brandF.includes(fullQ)) total += 8;
       if (catF.includes(fullQ))   total += 5;
       if (specF.includes(fullQ))  total += 1;
+      if (nameF.startsWith(fullQ)) total += 25;
 
       results.push({ product: p, score: total, isExact: allCore });
     }
 
-    const exactResults = results.filter(r => r.isExact);
-    const useFallback = coreTerms.length > 0 && exactResults.length === 0 && results.length > 0;
-    const displayed = useFallback ? results : exactResults.length ? exactResults : results;
+    // If spec constraints killed everything, retry without them using original query words
+    const finalResults = results.length === 0 && specConstraints.length > 0
+      ? searchWithoutConstraints(allProductsWithSold, words, meaningfulWords, FIELD_W)
+      : results;
+
+    const exactResults = finalResults.filter(r => r.isExact);
+    const useFallback = coreTerms.length > 0 && exactResults.length === 0 && finalResults.length > 0;
+    const displayed = useFallback ? finalResults : exactResults.length ? exactResults : finalResults;
     if (coreTerms.length) displayed.sort((a, b) => b.score - a.score);
     return { filtered: displayed.map(s => ({ ...s.product, __fallback: useFallback })), isFallback: useFallback };
   }, [allProductsWithSold, query, showSold]);
