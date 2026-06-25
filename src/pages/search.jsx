@@ -371,11 +371,27 @@ export default function SearchPage() {
         return { removes: match[0], adds: { field: "gpu", pattern: new RegExp(model.replace(/ /, "\\s*"), "i") } };
       }
     },
-    // Bare GPU number like "3060", "1650", "4060" → match as GPU constraint
+    // Bare GPU number — any 3-4 digit number ending in 0 (Nvidia + AMD + future)
     {
-      regex: /^(\d{1,2})0[5-9]0$/i,
+      regex: /^\d{3,4}0$/i,
       expand(match) {
         return { removes: match[0], adds: { field: "gpu", pattern: new RegExp(match[0], "i") } };
+      }
+    },
+    // AMD GPU like "RX 580", "RX 6700" → GPU constraint
+    {
+      regex: /^rx\s*(\d{3,4})$/i,
+      expand(match) {
+        const model = match[0];
+        return { removes: match[0], adds: { field: "gpu", pattern: new RegExp(model.replace(/\s+/, "\\s*"), "i") } };
+      }
+    },
+    // AMD CPU like "Ryzen 5", "Ryzen 7", "Ryzen 9" → CPU constraint
+    {
+      regex: /^ryzen\s+[3579]$/i,
+      expand(match) {
+        const model = match[0].replace(/\s+/, "\\s*");
+        return { removes: match[0], adds: { field: "cpu", pattern: new RegExp(model, "i") } };
       }
     },
     // "core i5", "core i7", "core i9", "core i3" → CPU constraint
@@ -499,7 +515,7 @@ export default function SearchPage() {
     }
 
     const skipSpecs = new Set(["id", "img", "image", "imageurl", "image_url", "name", "brand", "price", "amount", "cost", "ngn"]);
-    const FIELD_W = { name: 10, brand: 6, category: 4, specs: 2 };
+    const FIELD_W = { name: 10, brand: 6, category: 10, specs: 2 };
 
     const results = [];
     for (const p of allProductsWithSold) {
