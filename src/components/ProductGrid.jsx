@@ -687,7 +687,7 @@ export default function ProductGrid({
 
   const { soldItems } = useMemo(() => {
     if (!sheetCsvUrl || !sourceItems.length || !headers.length) return { soldItems: [] };
-    const sourceKey = sheetCsvUrl.replace(/[^a-zA-Z0-9]/g, "_") + "_v6";
+    const sourceKey = sheetCsvUrl.replace(/[^a-zA-Z0-9]/g, "_") + "_v7";
     const backupKey = `tj_prod_${sourceKey}`;
     const soldKey = `tj_sold_${sourceKey}`;
 
@@ -762,7 +762,7 @@ export default function ProductGrid({
 
   // Merge sold items into sourceItems and sort by original position
   const displayItems = useMemo(() => {
-    const sourceKey = sheetCsvUrl.replace(/[^a-zA-Z0-9]/g, "_") + "_v6";
+    const sourceKey = sheetCsvUrl.replace(/[^a-zA-Z0-9]/g, "_") + "_v7";
     const backupKey = `tj_prod_${sourceKey}`;
     let backup = {};
     try { backup = JSON.parse(localStorage.getItem(backupKey) || "{}"); } catch {}
