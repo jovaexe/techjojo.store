@@ -1,6 +1,7 @@
 // src/components/ProductGrid.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { getCachedSource, CSV_URLS } from "../lib/productCache";
 
 import PriceSlider from "./filters/PriceSlider";
 
@@ -447,11 +448,27 @@ function useProductsFromSheet(sheetCsvUrl) {
   const [headers, setHeaders] = useState([]);
   const [loading, setLoading] = useState(!!sheetCsvUrl);
   const [error, setError] = useState("");
+  const servedFromCache = useRef(false);
 
   useEffect(() => {
     if (!sheetCsvUrl) return;
     let cancelled = false;
+    servedFromCache.current = false;
 
+    // Serve from global cache if available (instant)
+    const entry = CSV_URLS.find(c => c.url === sheetCsvUrl);
+    if (entry) {
+      const cached = getCachedSource(entry.name);
+      if (cached) {
+        servedFromCache.current = true;
+        const h = cached.rows.length ? Object.keys(cached.rows[0]._raw) : [];
+        setHeaders(h);
+        setRows(cached.rows.map(r => r._raw));
+        setLoading(false);
+      }
+    }
+
+    // Always fetch fresh data in background
     const parseCSV = (csv) => {
       const lines = csv.replace(/\r/g, "").split("\n").filter(l => l.trim().length);
       if (lines.length === 0) return { headers: [], rows: [] };
@@ -486,7 +503,7 @@ function useProductsFromSheet(sheetCsvUrl) {
 
     (async () => {
       try {
-        setLoading(true);
+        if (!servedFromCache.current) setLoading(true);
         const res = await fetch(sheetCsvUrl, { cache: "no-store" });
         if (!res.ok) throw new Error(`Failed to load products (${res.status})`);
         const text = await res.text();

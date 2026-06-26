@@ -78,6 +78,11 @@ export function getCachedProducts() {
   return cache;
 }
 
+export function getCachedSource(sourceName) {
+  if (!cache) return null;
+  return cache.find(g => g.source === sourceName) || null;
+}
+
 export function isLoading() {
   return loading;
 }
