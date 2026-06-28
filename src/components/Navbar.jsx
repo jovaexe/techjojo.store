@@ -170,7 +170,20 @@ export default function Navbar() {
   }, [searchVal, getCacheVersion()]);
 
   const [selectedIdx, setSelectedIdx] = useState(-1);
+  const [showSuggestions, setShowSuggestions] = useState(false);
   const dropdownRef = useRef(null);
+
+  // Close suggestions on outside click or scroll
+  useEffect(() => {
+    if (!showSuggestions) return;
+    const close = () => { setShowSuggestions(false); setSelectedIdx(-1); };
+    const clickHandler = (e) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target)) close();
+    };
+    document.addEventListener("mousedown", clickHandler);
+    window.addEventListener("scroll", close, true);
+    return () => { document.removeEventListener("mousedown", clickHandler); window.removeEventListener("scroll", close, true); };
+  }, [showSuggestions]);
 
   const handleKeyDown = (e) => {
     if (e.key === "ArrowDown") {
@@ -184,19 +197,22 @@ export default function Navbar() {
       const selected = suggestions[selectedIdx];
       if (selected) {
         setSearchVal(selected.text);
-        setSelectedIdx(-1);
+        closeSuggestions();
         navigate(`/search?q=${encodeURIComponent(selected.text)}`);
       }
     } else if (e.key === "Escape") {
-      setSelectedIdx(-1);
+      closeSuggestions();
     }
   };
 
   const handleSearch = (e) => {
     e.preventDefault();
+    setShowSuggestions(false);
     const val = searchVal.trim();
     if (val) navigate(`/search?q=${encodeURIComponent(val)}`);
   };
+
+  const closeSuggestions = () => { setShowSuggestions(false); setSelectedIdx(-1); };
 
   return (
     <>
@@ -220,18 +236,18 @@ export default function Navbar() {
             </button>
           </div>
           <div className="pb-3">
-              <form onSubmit={handleSearch} className="flex items-center rounded-lg border bg-white px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900">
+              <form onSubmit={(e) => { setShowSuggestions(false); handleSearch(e); }} className="flex items-center rounded-lg border bg-white px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900">
                 <Search className="h-4 w-4 shrink-0 text-gray-400" />
                 <div className="relative flex-1">
-                  <input ref={inputRef} value={searchVal} onChange={(e) => { setSearchVal(e.target.value); setSelectedIdx(-1); }}
+                  <input ref={inputRef} value={searchVal} onChange={(e) => { setSearchVal(e.target.value); setSelectedIdx(-1); setShowSuggestions(true); }}
                     onKeyDown={handleKeyDown}
                     placeholder="Search All Products"
                     className="w-full bg-transparent px-2 py-1 text-sm outline-none text-gray-900 placeholder:text-gray-400 dark:text-gray-100 dark:placeholder:text-gray-500" />
-                  {suggestions.length > 0 && searchVal && (
-                    <div className="absolute left-0 top-full mt-1 z-50 w-full rounded-xl border bg-white p-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
+                  {showSuggestions && suggestions.length > 0 && (
+                    <div ref={dropdownRef} className="absolute left-0 top-full mt-1 z-50 w-full rounded-xl border bg-white p-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
                       {suggestions.map((s, i) => (
                         <button key={s.text + s.source} type="button"
-                          onClick={() => { setSearchVal(s.text); setSelectedIdx(-1); navigate(`/search?q=${encodeURIComponent(s.text)}`); }}
+                          onClick={() => { setSearchVal(s.text); closeSuggestions(); navigate(`/search?q=${encodeURIComponent(s.text)}`); }}
                           onMouseEnter={() => setSelectedIdx(i)}
                           className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-left transition ${i === selectedIdx ? "bg-gray-100 dark:bg-neutral-800" : "hover:bg-gray-50 dark:hover:bg-neutral-850"}`}>
                           <span className="text-gray-600 dark:text-gray-400">{s.text}</span>
@@ -280,15 +296,15 @@ export default function Navbar() {
                 <form onSubmit={handleSearch} className="flex items-center">
                   <Search className="ml-3 h-4 w-4 shrink-0 text-gray-400" />
                    <div className="relative flex-1">
-                     <input ref={inputRef} value={searchVal} onChange={(e) => { setSearchVal(e.target.value); setSelectedIdx(-1); }}
+                     <input ref={inputRef} value={searchVal} onChange={(e) => { setSearchVal(e.target.value); setSelectedIdx(-1); setShowSuggestions(true); }}
                        onKeyDown={handleKeyDown}
                        placeholder="Search All Products"
                        className="w-full bg-transparent py-2.5 pr-3 pl-2 text-sm outline-none text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500" />
-                     {suggestions.length > 0 && searchVal && (
-                       <div className="absolute left-0 top-full mt-1 z-50 w-full rounded-xl border bg-white p-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
+                     {showSuggestions && suggestions.length > 0 && (
+                       <div ref={dropdownRef} className="absolute left-0 top-full mt-1 z-50 w-full rounded-xl border bg-white p-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
                          {suggestions.map((s, i) => (
                            <button key={s.text + s.source} type="button"
-                             onClick={() => { setSearchVal(s.text); setSelectedIdx(-1); navigate(`/search?q=${encodeURIComponent(s.text)}`); }}
+                             onClick={() => { setSearchVal(s.text); closeSuggestions(); navigate(`/search?q=${encodeURIComponent(s.text)}`); }}
                              onMouseEnter={() => setSelectedIdx(i)}
                              className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-left transition ${i === selectedIdx ? "bg-gray-100 dark:bg-neutral-800" : "hover:bg-gray-50 dark:hover:bg-neutral-850"}`}>
                              <span className="text-gray-600 dark:text-gray-400">{s.text}</span>
