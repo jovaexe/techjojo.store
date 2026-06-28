@@ -67,41 +67,128 @@ export default function Navbar() {
 
   const openSearch = () => setSearchOpen(true);
 
-  const suggestion = useMemo(() => {
-    if (!searchVal.trim()) return "";
+  const suggestions = useMemo(() => {
+    if (!searchVal.trim()) return [];
     const needle = searchVal.toLowerCase();
     const words = needle.split(/\s+/).filter(Boolean);
-    if (!words.length) return "";
+    if (!words.length) return [];
 
-    // Intent-based category detection from cached products
     const cached = getCachedProducts();
-    if (cached) {
-      const counts = {};
-      for (const group of cached) {
-        for (const p of group.rows) {
-          const nameF = (p._name || "").toLowerCase();
-          const brandF = (p._brand || "").toLowerCase();
-          const coreHit = words.every(w => nameF.includes(w) || brandF.includes(w));
-          if (!coreHit) continue;
-          const cat = p._source || "unknown";
-          counts[cat] = (counts[cat] || 0) + 1;
-        }
-      }
-      const bestCat = Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0];
-      if (bestCat) {
-        const catLower = bestCat.toLowerCase();
-        // If typed text starts with a letter, keep it as-is; otherwise just append category
-        return needle + " " + catLower;
+    if (!cached) return [];
+
+    const results = [];
+    const seen = new Set();
+    const addResult = (text, source, score) => {
+      const key = text + "|||" + source;
+      if (seen.has(key)) return;
+      seen.add(key);
+      results.push({ text, source, score });
+    };
+
+    // 1. Match product names from the cache
+    for (const group of cached) {
+      for (const p of group.rows) {
+        const name = p._name;
+        if (!name || name === "-") continue;
+        const nameL = name.toLowerCase();
+        const hay = nameL + " " + (p._brand || "").toLowerCase() + " " + group.source.toLowerCase();
+        if (!hay.includes(needle)) continue;
+
+        let score = 0;
+        if (nameL.startsWith(needle)) score = 100;
+        else if (nameL.includes(needle)) score = 60;
+        else score = 30;
+        addResult(name, group.source, score);
       }
     }
 
-    return "";
+    // 2. Broad category suggestions
+    const broadTerms = [
+      { match: [/\bgaming\b/i, /game\b/i],          text: "Gaming Laptop", src: "Category" },
+      { match: [/^business/i, /office/i],            text: "Business Laptop", src: "Category" },
+      { match: [/^mac\b/i, /macbook/i],              text: "MacBook", src: "Category" },
+      { match: [/^desktop/i],                         text: "Desktop PC", src: "Category" },
+      { match: [/phone|smartphone|^mobile/i],        text: "Smartphone", src: "Category" },
+      { match: [/^monitor|^display|screen/i],         text: "Monitor", src: "Category" },
+      { match: [/^tv\b/i],                            text: "Monitor", src: "Category" },
+      { match: [/^accessor/i],                        text: "Tech Accessories", src: "Category" },
+      { match: [/appliance|fridge|^home\b|^kitchen|^oven|^washer/i], text: "Home Appliance", src: "Category" },
+      { match: [/^laptop/i],                          text: "Laptop", src: "Category" },
+      { match: [/^tablet/i],                          text: "Tablet", src: "Category" },
+      { match: [/^printer/i],                         text: "Printer", src: "Category" },
+      { match: [/^router/i],                          text: "Router", src: "Category" },
+      { match: [/^keyboard/i],                        text: "Keyboard", src: "Category" },
+      { match: [/^mouse\b/i],                         text: "Mouse", src: "Category" },
+      { match: [/^headphone|^headset|^earphone|^earbuds/i], text: "Headphones", src: "Category" },
+      { match: [/^cable|^charger|^adapter/i],         text: "Cables & Chargers", src: "Category" },
+      { match: [/^cheap|^budget|^affordable|^inexpensive/i], text: "Budget Laptop", src: "Category" },
+      { match: [/^premium|^high.?end|^flagship/i],    text: "Premium Laptop", src: "Category" },
+      { match: [/^used|^refurbished|^second.?hand|^grade.?[a-z]/i], text: "Used Laptop", src: "Category" },
+      { match: [/^dell/i],                            text: "Dell Laptop", src: "Brand" },
+      { match: [/^hp\b/i],                            text: "HP Laptop", src: "Brand" },
+      { match: [/^lenovo/i],                          text: "Lenovo Laptop", src: "Brand" },
+      { match: [/^apple/i],                           text: "Apple Laptop", src: "Brand" },
+      { match: [/^samsung/i],                         text: "Samsung Laptop", src: "Brand" },
+      { match: [/^asus/i],                            text: "ASUS Laptop", src: "Brand" },
+      { match: [/^acer/i],                            text: "Acer Laptop", src: "Brand" },
+      { match: [/^msi\b/i],                           text: "MSI Laptop", src: "Brand" },
+      { match: [/^huawei/i],                          text: "Huawei Laptop", src: "Brand" },
+      { match: [/^google/i],                          text: "Google Pixel", src: "Brand" },
+      { match: [/^oneplus/i],                         text: "OnePlus Phone", src: "Brand" },
+      { match: [/^nokia/i],                           text: "Nokia Phone", src: "Brand" },
+      { match: [/^intel/i],                           text: "Intel Laptop", src: "Component" },
+      { match: [/^amd\b/i],                           text: "AMD Laptop", src: "Component" },
+      { match: [/^nvidia/i],                          text: "NVIDIA Laptop", src: "Component" },
+      { match: [/^ryzen\s*\d/i],                      text: "Ryzen Laptop", src: "CPU" },
+      { match: [/i[3579]\b/, /^core\s*i[3579]/i],    text: (needle.match(/i[3579]/) ? "Core " + needle.match(/i[3579]/i)[0].toUpperCase() : "") + " Laptop", src: "CPU" },
+      { match: [/^rtx\b/i],                           text: "RTX Laptop", src: "GPU" },
+      { match: [/^gtx\b/i],                           text: "GTX Laptop", src: "GPU" },
+      { match: [/^quadro/i],                          text: "Quadro Laptop", src: "GPU" },
+      { match: [/^radeon/i],                          text: "Radeon Laptop", src: "GPU" },
+      { match: [/^(10[5-9]0|16[5-6]0|20[5-9]0|30[5-9]0|40[5-9]0)$/i], text: "RTX " + needle.toUpperCase() + " Laptop", src: "GPU" },
+      { match: [/^(rx\s*\d{3,4})$/i],                text: "AMD " + needle.toUpperCase() + " Laptop", src: "GPU" },
+    ];
+    for (const bt of broadTerms) {
+      if (bt.match.some(r => r.test(needle))) {
+        const text = bt.text;
+        if (text && text.trim()) addResult(text, bt.src, 85);
+      }
+    }
+
+    // Sort by score, take top 5
+    results.sort((a, b) => b.score - a.score);
+    // Deduplicate similar texts (e.g., same product name from different sources)
+    const deduped = [];
+    const textSeen = new Set();
+    for (const r of results) {
+      const k = r.text.toLowerCase();
+      if (textSeen.has(k)) continue;
+      textSeen.add(k);
+      deduped.push(r);
+    }
+    return deduped.slice(0, 5);
   }, [searchVal, getCacheVersion()]);
 
+  const [selectedIdx, setSelectedIdx] = useState(-1);
+  const dropdownRef = useRef(null);
+
   const handleKeyDown = (e) => {
-    if ((e.key === "Tab" || e.key === "ArrowRight") && suggestion) {
+    if (e.key === "ArrowDown") {
       e.preventDefault();
-      setSearchVal(suggestion);
+      setSelectedIdx(i => Math.min(i + 1, suggestions.length - 1));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setSelectedIdx(i => Math.max(i - 1, -1));
+    } else if (e.key === "Enter" && selectedIdx >= 0) {
+      e.preventDefault();
+      const selected = suggestions[selectedIdx];
+      if (selected) {
+        setSearchVal(selected.text);
+        setSelectedIdx(-1);
+        navigate(`/search?q=${encodeURIComponent(selected.text)}`);
+      }
+    } else if (e.key === "Escape") {
+      setSelectedIdx(-1);
     }
   };
 
@@ -133,22 +220,28 @@ export default function Navbar() {
             </button>
           </div>
           <div className="pb-3">
-            <form onSubmit={handleSearch} className="flex items-center rounded-lg border bg-white px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900">
-              <Search className="h-4 w-4 shrink-0 text-gray-400" />
-              <div className="relative flex-1">
-                <input ref={inputRef} value={searchVal} onChange={(e) => setSearchVal(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  onClick={() => { if (document.activeElement === inputRef.current && suggestion) setSearchVal(suggestion); }}
-                  placeholder="Search All Products"
-                  className="w-full bg-transparent px-2 py-1 text-sm outline-none text-gray-900 placeholder:text-gray-400 dark:text-gray-100 dark:placeholder:text-gray-500" />
-                 {suggestion && searchVal && (
-                   <div className="pointer-events-none absolute inset-0 z-0 flex items-center text-sm pl-2">
-                     <span className="invisible">{searchVal}</span>
-                     <span className="text-gray-300 dark:text-gray-600">{suggestion.slice(searchVal.length)}</span>
-                   </div>
-                 )}
-              </div>
-            </form>
+              <form onSubmit={handleSearch} className="flex items-center rounded-lg border bg-white px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900">
+                <Search className="h-4 w-4 shrink-0 text-gray-400" />
+                <div className="relative flex-1">
+                  <input ref={inputRef} value={searchVal} onChange={(e) => { setSearchVal(e.target.value); setSelectedIdx(-1); }}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Search All Products"
+                    className="w-full bg-transparent px-2 py-1 text-sm outline-none text-gray-900 placeholder:text-gray-400 dark:text-gray-100 dark:placeholder:text-gray-500" />
+                  {suggestions.length > 0 && searchVal && (
+                    <div className="absolute left-0 top-full mt-1 z-50 w-full rounded-xl border bg-white p-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
+                      {suggestions.map((s, i) => (
+                        <button key={s.text + s.source} type="button"
+                          onClick={() => { setSearchVal(s.text); setSelectedIdx(-1); navigate(`/search?q=${encodeURIComponent(s.text)}`); }}
+                          onMouseEnter={() => setSelectedIdx(i)}
+                          className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-left transition ${i === selectedIdx ? "bg-gray-100 dark:bg-neutral-800" : "hover:bg-gray-50 dark:hover:bg-neutral-850"}`}>
+                          <span className="text-gray-600 dark:text-gray-400">{s.text}</span>
+                          <span className="ml-auto shrink-0 text-[10px] text-gray-400 dark:text-gray-500">{s.source}</span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </form>
           </div>
         </div>
 
@@ -182,20 +275,26 @@ export default function Navbar() {
           </div>
           <nav className="flex items-center gap-1">
             <div ref={containerRef}
-              className={`overflow-hidden rounded-lg border transition-all duration-300 ease-in-out ${searchOpen ? "w-60 border-gray-400 dark:border-neutral-500" : "w-48 border-gray-400 dark:border-neutral-800 hover:bg-gray-100/80 dark:hover:bg-neutral-900"}`}>
+              className={`rounded-lg border transition-all duration-300 ease-in-out ${searchOpen ? "w-60 border-gray-400 dark:border-neutral-500 overflow-visible" : "w-48 border-gray-400 dark:border-neutral-800 hover:bg-gray-100/80 dark:hover:bg-neutral-900 overflow-hidden"}`}>
               {searchOpen ? (
                 <form onSubmit={handleSearch} className="flex items-center">
                   <Search className="ml-3 h-4 w-4 shrink-0 text-gray-400" />
                    <div className="relative flex-1">
-                     <input ref={inputRef} value={searchVal} onChange={(e) => setSearchVal(e.target.value)}
+                     <input ref={inputRef} value={searchVal} onChange={(e) => { setSearchVal(e.target.value); setSelectedIdx(-1); }}
                        onKeyDown={handleKeyDown}
-                       onClick={() => { if (document.activeElement === inputRef.current && suggestion) setSearchVal(suggestion); }}
                        placeholder="Search All Products"
                        className="w-full bg-transparent py-2.5 pr-3 pl-2 text-sm outline-none text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500" />
-                     {suggestion && searchVal && (
-                       <div className="pointer-events-none absolute inset-0 z-0 flex items-center py-2.5 pr-3 pl-2 text-sm">
-                         <span className="invisible">{searchVal}</span>
-                         <span className="text-gray-300 dark:text-gray-600">{suggestion.slice(searchVal.length)}</span>
+                     {suggestions.length > 0 && searchVal && (
+                       <div className="absolute left-0 top-full mt-1 z-50 w-full rounded-xl border bg-white p-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
+                         {suggestions.map((s, i) => (
+                           <button key={s.text + s.source} type="button"
+                             onClick={() => { setSearchVal(s.text); setSelectedIdx(-1); navigate(`/search?q=${encodeURIComponent(s.text)}`); }}
+                             onMouseEnter={() => setSelectedIdx(i)}
+                             className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-left transition ${i === selectedIdx ? "bg-gray-100 dark:bg-neutral-800" : "hover:bg-gray-50 dark:hover:bg-neutral-850"}`}>
+                             <span className="text-gray-600 dark:text-gray-400">{s.text}</span>
+                             <span className="ml-auto shrink-0 text-[10px] text-gray-400 dark:text-gray-500">{s.source}</span>
+                           </button>
+                         ))}
                        </div>
                      )}
                    </div>
