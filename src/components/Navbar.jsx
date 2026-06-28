@@ -78,11 +78,11 @@ export default function Navbar() {
 
     const results = [];
     const seen = new Set();
-    const addResult = (text, source, score) => {
+    const addResult = (text, source, score, pin) => {
       const key = text + "|||" + source;
       if (seen.has(key)) return;
       seen.add(key);
-      results.push({ text, source, score });
+      results.push({ text, source, score, pin });
     };
 
     // 1. Match product names from the cache
@@ -98,11 +98,13 @@ export default function Navbar() {
         if (nameL.startsWith(needle)) score = 100;
         else if (nameL.includes(needle)) score = 60;
         else score = 30;
-        addResult(name, group.source, score);
+
+        const pin = group.source + "|||" + name + "|||" + (p._brand || "");
+        addResult(name, group.source, score, pin);
       }
     }
 
-    // 2. Broad category suggestions
+    // 2. Broad category suggestions (no pid — use searchQuery fallback)
     const broadTerms = [
       { match: [/\bgaming\b/i, /game\b/i],          text: "Gaming Laptop", src: "Category" },
       { match: [/^business/i, /office/i],            text: "Business Laptop", src: "Category" },
@@ -195,7 +197,7 @@ export default function Navbar() {
     } else if (e.key === "Enter" && selectedIdx >= 0) {
       e.preventDefault();
       const selected = suggestions[selectedIdx];
-      if (selected) searchQuery(selected.text);
+      if (selected) searchQuery(selected.text, selected.pin);
     } else if (e.key === "Escape") {
       closeSuggestions();
     }
@@ -210,12 +212,12 @@ export default function Navbar() {
 
   const closeSuggestions = () => { setShowSuggestions(false); setSelectedIdx(-1); };
 
-  const searchQuery = (q) => {
+  const searchQuery = (q, pin) => {
     setSearchVal(q);
     setShowSuggestions(false);
     setSelectedIdx(-1);
     window.scrollTo(0, 0);
-    navigate(`/search?q=${encodeURIComponent(q)}`);
+    navigate(`/search?q=${encodeURIComponent(q)}${pin ? "&pin=" + encodeURIComponent(pin) : ""}`);
   };
 
   return (
@@ -251,7 +253,7 @@ export default function Navbar() {
                     <div ref={dropdownRef} className="absolute left-0 top-full mt-1 z-50 w-full rounded-xl border bg-white p-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
                       {suggestions.map((s, i) => (
                         <button key={s.text + s.source} type="button"
-                           onClick={() => searchQuery(s.text)}
+                           onClick={() => searchQuery(s.text, s.pin)}
                           onMouseEnter={() => setSelectedIdx(i)}
                           className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-left transition ${i === selectedIdx ? "bg-gray-100 dark:bg-neutral-800" : "hover:bg-gray-50 dark:hover:bg-neutral-850"}`}>
                           <span className="text-gray-600 dark:text-gray-400">{s.text}</span>
@@ -308,7 +310,7 @@ export default function Navbar() {
                        <div ref={dropdownRef} className="absolute left-0 top-full mt-1 z-50 w-full rounded-xl border bg-white p-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
                          {suggestions.map((s, i) => (
                            <button key={s.text + s.source} type="button"
-                          onClick={() => searchQuery(s.text)}
+                          onClick={() => searchQuery(s.text, s.pin)}
                              onMouseEnter={() => setSelectedIdx(i)}
                              className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-left transition ${i === selectedIdx ? "bg-gray-100 dark:bg-neutral-800" : "hover:bg-gray-50 dark:hover:bg-neutral-850"}`}>
                              <span className="text-gray-600 dark:text-gray-400">{s.text}</span>

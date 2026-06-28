@@ -888,7 +888,7 @@ export default function ProductGrid({
 
   // Reset page when search/filters change (but not when navigating to a product via URL)
   useEffect(() => {
-    if (focusId && hasScrolled.current !== focusId) return;
+    if (focusId) return;
     setPage(1);
   }, [q, filters, sliderMin, sliderMax]);
 

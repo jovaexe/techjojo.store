@@ -157,6 +157,21 @@ function formatApplianceValue(value) {
   return text;
 }
 
+// ─── Helpers for product URL generation ───
+function shortId(fp) {
+  let hash = 0;
+  for (let i = 0; i < fp.length; i++) { hash = ((hash << 5) - hash) + fp.charCodeAt(i); hash |= 0; }
+  return "p" + Math.abs(hash).toString(36);
+}
+function productFp(p) {
+  const skip = new Set(["id", "img", "image", "imageurl", "image_url"]);
+  return (p._headers || []).filter(h => !skip.has(h.toLowerCase())).map(h => {
+    const v = p._raw[h];
+    if (h.toLowerCase() === "price" && typeof v === "number") return String(v);
+    return v ?? "";
+  }).join("|||");
+}
+
 function formatNaira(n) {
   try {
     return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(n);
@@ -242,6 +257,8 @@ function Card({ children, className = "" }) {
 export default function SearchPage() {
   const [searchParams] = useSearchParams();
   const query = searchParams.get("q") || "";
+  const pinParam = searchParams.get("pin") || "";
+  const pinTarget = pinParam ? decodeURIComponent(pinParam).split("|||") : null;
   const [allProducts, setAllProducts] = useState([]);
   const [ready, setReady] = useState(false);
   const [previewSrc, setPreviewSrc] = useState("");
@@ -544,9 +561,9 @@ export default function SearchPage() {
     return r;
   }
 
-  const { filtered, isFallback } = useMemo(() => {
-    if (!allProductsWithSold.length) return { filtered: [], isFallback: false };
-    if (!query && !showSold) return { filtered: [], isFallback: false };
+  const { filtered, isFallback, pinnedProduct } = useMemo(() => {
+    if (!allProductsWithSold.length) return { filtered: [], isFallback: false, pinnedProduct: null };
+    if (!query && !showSold) return { filtered: [], isFallback: false, pinnedProduct: null };
 
     const needle = normalize(query);
     const words = needle ? needle.split(/\s+/).filter(Boolean) : [];
@@ -643,8 +660,37 @@ export default function SearchPage() {
 
     const displayed = finalResults;
     if (coreTerms.length) displayed.sort((a, b) => b.score - a.score);
-    return { filtered: displayed.map(s => s.product), isFallback: false };
-  }, [allProductsWithSold, query, showSold]);
+
+    // If a pin is provided, find that product by natural key and ensure it's first (with fallback)
+    let pinnedProduct = null;
+    if (pinTarget) {
+      const [pinSource, pinName, pinBrand] = pinTarget;
+      let idx = displayed.findIndex(r => {
+        const p = r.product;
+        return normalize(p._source) === normalize(pinSource) &&
+               normalize(p._name) === normalize(pinName) &&
+               normalize(p._brand || "") === normalize(pinBrand);
+      });
+      if (idx === -1) {
+        const raw = allProductsWithSold.find(p =>
+          normalize(p._source) === normalize(pinSource) &&
+          normalize(p._name) === normalize(pinName) &&
+          normalize(p._brand || "") === normalize(pinBrand)
+        );
+        if (raw) {
+          displayed.unshift({ product: raw, score: Infinity, isExact: true });
+          idx = 0;
+        }
+      }
+      if (idx !== -1 && idx < displayed.length) {
+        const [pinned] = displayed.splice(idx, 1);
+        displayed.unshift(pinned);
+        pinnedProduct = pinned.product;
+      }
+    }
+
+    return { filtered: displayed.map(s => s.product), isFallback: false, pinnedProduct };
+  }, [allProductsWithSold, query, showSold, pinTarget]);
 
   const filteredBySidebar = useMemo(() => {
     const noActive = !filterSource && !filterBrand && !filterCondition && !priceMin && !priceMax && !Object.keys(filterSpecs).length;
@@ -885,6 +931,38 @@ export default function SearchPage() {
              query && showSold ? `Found ${filteredBySidebar.length} result${filteredBySidebar.length === 1 ? "" : "s"} for "${query}"` :
              query ? `Found ${filteredBySidebar.length} result${filteredBySidebar.length === 1 ? "" : "s"} for "${query}"` :
              `Showing ${filteredBySidebar.length} sold item${filteredBySidebar.length === 1 ? "" : "s"}`}
+          </div>
+        )}
+
+        {ready && pinnedProduct && (
+          <div className="mb-6 rounded-xl border-2 border-cyan-400 bg-cyan-50/50 p-3 dark:border-cyan-600 dark:bg-cyan-900/10">
+            <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-cyan-600 dark:text-cyan-400">
+              Exact Match
+            </div>
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <span className="font-semibold text-gray-900 dark:text-gray-100">{pinnedProduct._name}</span>
+                {pinnedProduct._brand && pinnedProduct._brand !== "-" && (
+                  <span className="ml-2 text-xs text-gray-500 dark:text-gray-400">{pinnedProduct._brand}</span>
+                )}
+              </div>
+              <a href={(() => {
+                const fp = productFp(pinnedProduct);
+                const sid = shortId(fp);
+                const slug = (pinnedProduct._name || "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
+                const cat = (pinnedProduct._source || "").toLowerCase().replace(/\s+/g, "");
+                return `/${cat}?p=${sid}-${slug}`;
+              })()}
+                className="shrink-0 rounded-lg border px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-100 dark:border-neutral-700 dark:text-gray-200 dark:hover:bg-neutral-800">
+                View in {pinnedProduct._source}
+              </a>
+            </div>
+          </div>
+        )}
+
+        {ready && sortedGroups.length > 0 && (
+          <div className="mb-4 text-sm font-medium text-gray-500 dark:text-gray-400">
+            {pinnedProduct ? "Similar Results" : "Results"}
           </div>
         )}
 
