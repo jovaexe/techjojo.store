@@ -195,11 +195,7 @@ export default function Navbar() {
     } else if (e.key === "Enter" && selectedIdx >= 0) {
       e.preventDefault();
       const selected = suggestions[selectedIdx];
-      if (selected) {
-        setSearchVal(selected.text);
-        closeSuggestions();
-        navigate(`/search?q=${encodeURIComponent(selected.text)}`);
-      }
+      if (selected) searchQuery(selected.text);
     } else if (e.key === "Escape") {
       closeSuggestions();
     }
@@ -209,10 +205,18 @@ export default function Navbar() {
     e.preventDefault();
     setShowSuggestions(false);
     const val = searchVal.trim();
-    if (val) navigate(`/search?q=${encodeURIComponent(val)}`);
+    if (val) { window.scrollTo(0, 0); navigate(`/search?q=${encodeURIComponent(val)}`); }
   };
 
   const closeSuggestions = () => { setShowSuggestions(false); setSelectedIdx(-1); };
+
+  const searchQuery = (q) => {
+    setSearchVal(q);
+    setShowSuggestions(false);
+    setSelectedIdx(-1);
+    window.scrollTo(0, 0);
+    navigate(`/search?q=${encodeURIComponent(q)}`);
+  };
 
   return (
     <>
@@ -247,7 +251,7 @@ export default function Navbar() {
                     <div ref={dropdownRef} className="absolute left-0 top-full mt-1 z-50 w-full rounded-xl border bg-white p-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
                       {suggestions.map((s, i) => (
                         <button key={s.text + s.source} type="button"
-                          onClick={() => { setSearchVal(s.text); closeSuggestions(); navigate(`/search?q=${encodeURIComponent(s.text)}`); }}
+                           onClick={() => searchQuery(s.text)}
                           onMouseEnter={() => setSelectedIdx(i)}
                           className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-left transition ${i === selectedIdx ? "bg-gray-100 dark:bg-neutral-800" : "hover:bg-gray-50 dark:hover:bg-neutral-850"}`}>
                           <span className="text-gray-600 dark:text-gray-400">{s.text}</span>
@@ -304,7 +308,7 @@ export default function Navbar() {
                        <div ref={dropdownRef} className="absolute left-0 top-full mt-1 z-50 w-full rounded-xl border bg-white p-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
                          {suggestions.map((s, i) => (
                            <button key={s.text + s.source} type="button"
-                             onClick={() => { setSearchVal(s.text); closeSuggestions(); navigate(`/search?q=${encodeURIComponent(s.text)}`); }}
+                          onClick={() => searchQuery(s.text)}
                              onMouseEnter={() => setSelectedIdx(i)}
                              className={`flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-left transition ${i === selectedIdx ? "bg-gray-100 dark:bg-neutral-800" : "hover:bg-gray-50 dark:hover:bg-neutral-850"}`}>
                              <span className="text-gray-600 dark:text-gray-400">{s.text}</span>

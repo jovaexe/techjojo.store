@@ -394,6 +394,13 @@ export default function SearchPage() {
         return { removes: match[0], adds: { field: "cpu", pattern: new RegExp(model, "i") } };
       }
     },
+    // Bare GPU prefix: "rtx", "gtx", "radeon", "quadro" → GPU constraint
+    {
+      regex: /^(rtx|gtx|radeon|quadro)$/i,
+      expand(match) {
+        return { removes: match[0], adds: { field: "gpu", pattern: new RegExp(match[0], "i") } };
+      }
+    },
     // "core i5", "core i7", "core i9", "core i3" → CPU constraint
     {
       regex: /^core\s+i[3579]$/i,
@@ -425,6 +432,9 @@ export default function SearchPage() {
     display: ["display", "screen", "screen size", "panel"],
   };
 
+  const SPEC_FIELD_KEYS = Object.keys(SPEC_HEADER_ALIASES);
+
+  // ─── Field index: built from product data, maps tokens to their dominant field ───
   function findHeader(headers, candidates) {
     const lowers = headers.map(h => h.toLowerCase());
     for (const c of candidates) {
@@ -497,23 +507,37 @@ export default function SearchPage() {
       const nameF = normalize(p._name);
       const brandF = normalize(p._brand);
       const catF = normalize(p._source);
-      const specF = normalize(p._headers.filter(h => !skipSpecs.has(h.toLowerCase())).map(h => String(p._raw[h] ?? "")).join(" "));
-      let allCore = true, total = 0;
+      const specHeaders = {};
+      for (const h of p._headers) { if (!skipSpecs.has(h.toLowerCase())) specHeaders[h] = normalize(String(p._raw[h] ?? "")); }
+      const specF = Object.values(specHeaders).join(" ");
+      let allCore = true, total = 0, specCoherence = 0;
+      let coherenceField = null;
       for (const w of coreTerms) {
-        const nameHit = nameF.includes(w), brandHit = brandF.includes(w), catHit = catF.includes(w), specHit = specF.includes(w), coreHit = nameHit || brandHit || catHit;
+        const nameHit = nameF.includes(w), brandHit = brandF.includes(w), catHit = catF.includes(w), coreHit = nameHit || brandHit || catHit;
         if (meaningfulWords.has(w) && !coreHit) allCore = false;
         if (nameHit) total += FIELD_W.name;
         if (brandHit) total += FIELD_W.brand;
         if (catHit) total += FIELD_W.category;
-        if (!coreHit && specHit) total += FIELD_W.specs;
+        if (!coreHit) {
+          for (const [header, val] of Object.entries(specHeaders)) {
+            if (val.split(/\s+/).includes(w)) {
+              total += FIELD_W.specs;
+              if (!coherenceField) coherenceField = header;
+              else if (coherenceField === header) specCoherence++;
+              else coherenceField = "";
+              break;
+            }
+          }
+        }
       }
       if (total <= 0) continue;
+      if (specCoherence > 0 && coherenceField) total += 25;
       if (allCore) total += 20;
       const fullQ = coreTerms.join(" ");
       if (nameF.includes(fullQ)) total += 15;
       if (brandF.includes(fullQ)) total += 8;
       if (catF.includes(fullQ)) total += 5;
-      if (specF.includes(fullQ)) total += 1;
+      if (specF.includes(fullQ)) total += 10;
       if (nameF.startsWith(fullQ)) total += 25;
       r.push({ product: p, score: total, isExact: allCore });
     }
@@ -527,7 +551,7 @@ export default function SearchPage() {
     const needle = normalize(query);
     const words = needle ? needle.split(/\s+/).filter(Boolean) : [];
 
-    // Apply query expansion
+    // Apply pattern rules (gen/series/model numbers)
     const { coreTerms, specConstraints } = expandQuery(query);
 
     // Determine which core terms are "meaningful"
@@ -545,7 +569,7 @@ export default function SearchPage() {
     }
 
     const skipSpecs = new Set(["id", "img", "image", "imageurl", "image_url", "name", "brand", "price", "amount", "cost", "ngn"]);
-    const FIELD_W = { name: 10, brand: 6, category: 10, specs: 2 };
+    const FIELD_W = { name: 10, brand: 6, category: 10, specs: 8 };
 
     const results = [];
     for (const p of allProductsWithSold) {
@@ -555,16 +579,24 @@ export default function SearchPage() {
       const nameF  = normalize(p._name);
       const brandF = normalize(p._brand);
       const catF   = normalize(p._source);
-      const specF  = normalize(p._headers.filter(h => !skipSpecs.has(h.toLowerCase())).map(h => String(p._raw[h] ?? "")).join(" "));
+
+      // Build per-header spec map for coherence detection
+      const specHeaders = {};
+      for (const h of p._headers) {
+        if (skipSpecs.has(h.toLowerCase())) continue;
+        specHeaders[h] = normalize(String(p._raw[h] ?? ""));
+      }
+      const specF = Object.values(specHeaders).join(" ");
 
       let allCore = true;
       let total = 0;
+      let specCoherence = 0; // count of words that hit specs only
+      let coherenceField = null; // track which field all spec words hit
 
       for (const w of coreTerms) {
         const nameHit  = nameF.includes(w);
         const brandHit = brandF.includes(w);
         const catHit   = catF.includes(w);
-        const specHit  = specF.includes(w);
         const coreHit  = nameHit || brandHit || catHit;
 
         if (meaningfulWords.has(w) && !coreHit) allCore = false;
@@ -572,17 +604,33 @@ export default function SearchPage() {
         if (nameHit)  total += FIELD_W.name;
         if (brandHit) total += FIELD_W.brand;
         if (catHit)   total += FIELD_W.category;
-        if (!coreHit && specHit) total += FIELD_W.specs;
+
+        // Spec match — track which field it matched for coherence (whole-word only)
+        if (!coreHit) {
+          for (const [header, val] of Object.entries(specHeaders)) {
+            if (val.split(/\s+/).includes(w)) {
+              total += FIELD_W.specs;
+              if (!coherenceField) coherenceField = header;
+              else if (coherenceField === header) specCoherence++;
+              else coherenceField = "";
+              break;
+            }
+          }
+        }
       }
 
       if (total <= 0) continue;
+
+      // Spec coherence bonus: if all non-core-matched words hit the SAME spec field
+      if (specCoherence > 0 && coherenceField) total += 25;
+
       if (allCore) total += 20;
 
       const fullQ = coreTerms.join(" ");
       if (nameF.includes(fullQ))  total += 15;
       if (brandF.includes(fullQ)) total += 8;
       if (catF.includes(fullQ))   total += 5;
-      if (specF.includes(fullQ))  total += 1;
+      if (specF.includes(fullQ))  total += 10;
       if (nameF.startsWith(fullQ)) total += 25;
 
       results.push({ product: p, score: total, isExact: allCore });
@@ -593,11 +641,9 @@ export default function SearchPage() {
       ? searchWithoutConstraints(allProductsWithSold, words, meaningfulWords, FIELD_W)
       : results;
 
-    const exactResults = finalResults.filter(r => r.isExact);
-    const useFallback = coreTerms.length > 0 && exactResults.length === 0 && finalResults.length > 0;
-    const displayed = useFallback ? finalResults : exactResults.length ? exactResults : finalResults;
+    const displayed = finalResults;
     if (coreTerms.length) displayed.sort((a, b) => b.score - a.score);
-    return { filtered: displayed.map(s => ({ ...s.product, __fallback: useFallback })), isFallback: useFallback };
+    return { filtered: displayed.map(s => s.product), isFallback: false };
   }, [allProductsWithSold, query, showSold]);
 
   const filteredBySidebar = useMemo(() => {
