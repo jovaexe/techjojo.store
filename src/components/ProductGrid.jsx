@@ -756,11 +756,11 @@ export default function ProductGrid({
       sold[k] = { soldAt: Date.now() }; dirty = true;
     }
 
-    // Clean expired (24h)
+    // Clean expired (24h) — also delete backup so it won't be re-marked on next render
     const TTL = 24 * 60 * 60 * 1000;
     const now = Date.now();
     for (const k of Object.keys(sold)) {
-      if (now - sold[k].soldAt >= TTL) { delete sold[k]; dirty = true; }
+      if (now - sold[k].soldAt >= TTL) { delete sold[k]; delete backup[k]; dirty = true; }
     }
 
     if (dirty) {
