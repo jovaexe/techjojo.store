@@ -11,6 +11,41 @@ const logo = {
 };
 function logoFor(t) { return logo[t === "dark" ? "dark" : "light"]; }
 
+// Link to the Mojo's Canters game. Styled to match the header on canters.techjojo.store:
+// the bottle-cap logo tight against a heavy Archivo wordmark, with no border or fill so
+// it reads as a brand lockup rather than a button.
+function CantersLink({ compact = false }) {
+  return (
+    <a
+      href="https://canters.techjojo.store"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Play Mojo's Canters, our football game (opens in a new tab)"
+      className="group flex shrink-0 items-center gap-1.5"
+    >
+      <img
+        src="/mojo-cap.png"
+        alt=""
+        width="34"
+        height="34"
+        className={`${compact ? "h-6 w-6 min-[410px]:h-7 min-[410px]:w-7" : "h-[34px] w-[34px]"} shrink-0 transition duration-300 group-hover:scale-110`}
+      />
+      {compact ? (
+        // Phones: two short lines so it fits beside the theme button without tiny text.
+        // Hidden below 360px, where only the cap logo has room.
+        <span className="hidden min-[360px]:flex flex-col items-start gap-[3px] font-archivo font-black leading-none tracking-[-0.025em] text-gray-900 whitespace-nowrap dark:text-white">
+          <span className="text-[0.6rem] min-[410px]:text-[0.68rem]">Play</span>
+          <span className="text-[0.72rem] min-[410px]:text-[0.9rem]">Mojo&rsquo;s Canters</span>
+        </span>
+      ) : (
+        <span className="font-archivo font-black leading-none tracking-[-0.025em] text-gray-900 whitespace-nowrap text-[1.15rem] dark:text-white">
+          Play Mojo&rsquo;s Canters
+        </span>
+      )}
+    </a>
+  );
+}
+
 export default function Navbar() {
   const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
@@ -232,14 +267,17 @@ export default function Navbar() {
                 className="rounded-lg border border-gray-400 p-2.5 text-sm transition hover:bg-gray-100/80 active:bg-gray-200 dark:border-neutral-800 dark:hover:bg-neutral-900 dark:active:bg-neutral-700" aria-label="Categories">
                 <Menu className="h-4 w-4 text-gray-700 dark:text-gray-300" />
               </button>
-              <Link to="/" className="flex items-center group">
-                <img src={logoFor(theme)} alt="techjojo" className="h-10 w-auto transition duration-300 group-hover:scale-105" />
+              <Link to="/" className="flex shrink-0 items-center group">
+                <img src={logoFor(theme)} alt="techjojo" className="h-10 w-auto shrink-0 transition duration-300 group-hover:scale-105" />
               </Link>
             </div>
-            <button type="button" onClick={toggleTheme} aria-label="Toggle color mode"
-              className="rounded-lg border border-gray-400 px-3 py-2 text-sm transition hover:bg-gray-100/80 dark:border-neutral-800 dark:hover:bg-neutral-900">
-              <span className="block leading-none">{theme === "dark" ? "☀️" : "🌙"}</span>
-            </button>
+            <div className="flex items-center gap-1.5 min-[410px]:gap-2.5">
+              <CantersLink compact />
+              <button type="button" onClick={toggleTheme} aria-label="Toggle color mode"
+                className="rounded-lg border border-gray-400 px-3 py-2 text-sm transition hover:bg-gray-100/80 dark:border-neutral-800 dark:hover:bg-neutral-900">
+                <span className="block leading-none">{theme === "dark" ? "☀️" : "🌙"}</span>
+              </button>
+            </div>
           </div>
           <div className="pb-3">
               <form onSubmit={(e) => { setShowSuggestions(false); handleSearch(e); }} className="flex items-center rounded-lg border bg-white px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900">
@@ -268,7 +306,10 @@ export default function Navbar() {
         </div>
 
         {/* Desktop layout */}
-        <div className="mx-auto hidden h-16 max-w-6xl items-center justify-between px-4 lg:flex">
+        <div className="relative mx-auto hidden h-16 max-w-6xl items-center justify-between px-4 lg:flex">
+          <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+            <CantersLink />
+          </div>
           <div className="flex items-center gap-3">
             <div className="relative" ref={catRef}>
               <button type="button" onClick={(e) => { e.stopPropagation(); setCatOpen(v => !v); }}

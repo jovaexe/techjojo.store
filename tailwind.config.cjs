@@ -7,6 +7,7 @@ module.exports = {
       // Techy mixed fonts
       fontFamily: {
         orbitron: ["Orbitron", "ui-sans-serif", "system-ui", "sans-serif"],
+        archivo: ["Archivo", "Segoe UI", "ui-sans-serif", "system-ui", "sans-serif"],
         rajdhani: ["Rajdhani", "ui-sans-serif", "system-ui", "sans-serif"],
         exo2: ['"Exo 2"', "ui-sans-serif", "system-ui", "sans-serif"],
         jetbrains: [
