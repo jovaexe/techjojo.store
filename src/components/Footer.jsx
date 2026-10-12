@@ -19,7 +19,7 @@ export default function Footer({
         {/* Grid on mobile -> 2 columns on sm+: [brand + Canters | actions] */}
         <div className="grid grid-cols-1 gap-3 py-3 text-xs text-gray-600 dark:text-gray-300 sm:grid-cols-[1fr_auto] sm:items-center">
           {/* Brand */}
-          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+          <div className="flex flex-wrap items-center justify-between gap-x-5 gap-y-2 sm:justify-start">
             <div className="flex items-center gap-2">
               <span className="font-orbitron font-semibold lowercase text-gray-900 dark:text-white">
                 techjojo
