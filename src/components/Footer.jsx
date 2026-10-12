@@ -1,6 +1,6 @@
 // src/components/Footer.jsx
-import { Link } from "react-router-dom";
 import { ExternalLink } from "lucide-react";
+import CantersLink from "./CantersLink";
 
 export default function Footer({
   className = "",
@@ -16,80 +16,20 @@ export default function Footer({
       className={`${fixedClasses} w-full border-t border-gray-200 bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/80 dark:border-neutral-800 dark:bg-black/95 dark:supports-[backdrop-filter]:bg-black/80 ${className}`}
     >
       <div className="mx-auto max-w-7xl px-4">
-        {/* Grid on mobile -> 3 columns on sm+: [brand | nav | actions] */}
-        <div className="grid grid-cols-1 gap-3 py-3 text-xs text-gray-600 dark:text-gray-300 sm:grid-cols-[auto_1fr_auto] sm:items-center">
+        {/* Grid on mobile -> 2 columns on sm+: [brand + Canters | actions] */}
+        <div className="grid grid-cols-1 gap-3 py-3 text-xs text-gray-600 dark:text-gray-300 sm:grid-cols-[1fr_auto] sm:items-center">
           {/* Brand */}
-          <div className="flex items-center gap-2">
-            <span className="font-orbitron font-semibold lowercase text-gray-900 dark:text-white">
-              techjojo
-            </span>
-            <span className="font-orbitron font-semibold lowercase text-gray-600 dark:text-gray-300">
-              © {new Date().getFullYear()}
-            </span>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <div className="flex items-center gap-2">
+              <span className="font-orbitron font-semibold lowercase text-gray-900 dark:text-white">
+                techjojo
+              </span>
+              <span className="font-orbitron font-semibold lowercase text-gray-600 dark:text-gray-300">
+                © {new Date().getFullYear()}
+              </span>
+            </div>
+            <CantersLink />
           </div>
-
-          {/* Nav */}
-          <nav aria-label="Footer navigation" className="flex gap-6">
-            {/* left column */}
-            <div className="flex flex-col flex-wrap gap-2 lg:flex-row lg:flex-nowrap">
-              <Link
-                to="/businesslaptops"
-                className="font-orbitron lowercase transition hover:text-emerald-600 dark:hover:text-emerald-300 dark:hover:drop-shadow-[0_0_8px_rgba(16,185,129,0.55)]"
-              >
-                business laptops
-              </Link>
-              <Link
-                to="/gaminglaptops"
-                className="font-orbitron lowercase tracking-wide transition hover:text-blue-600 dark:hover:text-blue-300 dark:hover:drop-shadow-[0_0_8px_rgba(59,130,246,0.55)]"
-              >
-                gaming laptops
-              </Link>
-              <Link
-                to="/macbooks"
-                className="font-orbitron lowercase transition hover:text-stone-500 dark:hover:text-stone-300 dark:hover:drop-shadow-[0_0_8px_rgba(168,162,158,0.55)]"
-              >
-                macbooks
-              </Link>
-            </div>
-
-            {/* middle column */}
-            <div className="flex flex-col flex-wrap gap-2 lg:flex-row lg:flex-nowrap">
-              <Link
-                to="/desktops"
-                className="font-orbitron lowercase tracking-wide transition hover:text-amber-600 dark:hover:text-amber-300 dark:hover:drop-shadow-[0_0_8px_rgba(245,158,11,0.55)]"
-              >
-                desktops
-              </Link>
-              <Link
-                to="/smartphones"
-                className="font-orbitron lowercase transition hover:text-rose-600 dark:hover:text-rose-300 dark:hover:drop-shadow-[0_0_8px_rgba(251,113,133,0.55)]"
-              >
-                smartphones
-              </Link>
-              <Link
-                to="/monitors"
-                className="font-orbitron lowercase tracking-wide transition hover:text-purple-600 dark:hover:text-purple-300 dark:hover:drop-shadow-[0_0_8px_rgba(168,85,247,0.55)]"
-              >
-                monitors
-              </Link>
-            </div>
-
-            {/* right column */}
-            <div className="flex flex-col flex-wrap gap-2 lg:flex-row lg:flex-nowrap">
-              <Link
-                to="/techaccessories"
-                className="font-orbitron lowercase transition hover:text-orange-600 dark:hover:text-orange-300 dark:hover:drop-shadow-[0_0_8px_rgba(251,146,60,0.55)]"
-              >
-                tech accessories
-              </Link>
-              <Link
-                to="/homeappliances"
-                className="font-orbitron lowercase transition hover:text-cyan-600 dark:hover:text-cyan-300 dark:hover:drop-shadow-[0_0_8px_rgba(34,211,238,0.55)]"
-              >
-                home appliances
-              </Link>
-            </div>
-          </nav>
 
           {/* Actions */}
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:justify-end sm:gap-3">
