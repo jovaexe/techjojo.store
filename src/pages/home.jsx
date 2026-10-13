@@ -94,13 +94,24 @@ const tiles = [
 
 // Banner picture; quietly disappears if the image is missing or fails to load.
 // `wide`: on small screens the subtitle is short, so the photo can stretch across the free space.
-function BannerPhoto({ src, wide }) {
+// `tall`: the photo is portrait-shaped, so on small screens it runs the full height of the banner.
+function BannerPhoto({ src, wide, tall }) {
   const [failed, setFailed] = useState(false)
   if (!src || failed) return null
   return (
     <img src={src} alt="" loading="lazy" onError={() => setFailed(true)}
-      className={`pointer-events-none absolute right-3 top-[4.5rem] h-[calc(100%-5.25rem)] rounded-xl lg:top-3 lg:h-[calc(100%-1.5rem)] lg:w-auto lg:max-w-[58%] lg:object-contain lg:object-right ${wide ? "w-[52%] object-cover" : "w-auto max-w-[45%] object-contain object-right"} [-webkit-mask-image:linear-gradient(to_left,black_55%,transparent)] [mask-image:linear-gradient(to_left,black_55%,transparent)] transition duration-500 group-hover:scale-105`} />
+      className={`pointer-events-none absolute right-3 ${tall === "bigger" ? "top-[4rem] h-[calc(100%-4.75rem)]" : tall ? "top-3 h-[calc(100%-1.5rem)]" : "top-[4.5rem] h-[calc(100%-5.25rem)]"} rounded-xl lg:top-3 lg:h-[calc(100%-1.5rem)] lg:w-auto lg:max-w-[58%] lg:object-contain lg:object-right ${tall === "contain" ? "w-[36%] object-contain object-right" : tall === "bigger" ? "w-auto max-w-[50%] object-contain object-right" : tall ? "w-[45%] object-cover lg:object-contain" : wide ? "w-[52%] object-cover" : "w-auto max-w-[45%] object-contain object-right"} [-webkit-mask-image:linear-gradient(to_left,black_55%,transparent)] [mask-image:linear-gradient(to_left,black_55%,transparent)] transition duration-500 group-hover:scale-105`} />
   )
+}
+
+// Banners whose photo runs the full banner height on small screens (short titles only, so they never collide).
+// "contain" shows the whole photo, narrower so it never touches the title (portrait pictures like phones);
+// "bigger" keeps the usual spot below the title but gives the photo a little more room; otherwise it fills and crops.
+const tallFor = {
+  "/desktops": true,
+  "/monitors": true,
+  "/smartphones": "contain",
+  "/techaccessories": "bigger",
 }
 
 // Which catalog sheet supplies the photo for each banner (names match productCache.js)
@@ -136,6 +147,7 @@ function useCatalog() {
 const pickFor = {
   "/gaminglaptops": "ASUS ROG Strix G15",
   "/techaccessories": "Raiku R905 Wireless Gaming Keyboard & Mouse Combo",
+  "/desktops": "MSI Codex R2 AI (A2NVM7-455US)",
 }
 
 function photoFor(data, route) {
@@ -156,6 +168,23 @@ export default function Home() {
           <p className="text-sm text-gray-500 dark:text-gray-400">Pick a category to browse products.</p>
         </header>
 
+        {/* Delstar streaming service: opens its own welcome page in a new tab */}
+        <a href="https://delstar.coursi.site/welcome" target="_blank" rel="noopener noreferrer" className="group mb-4 block">
+          <Card className="relative overflow-hidden transition-all duration-300 hover:scale-[1.01] hover:shadow-xl active:scale-[0.99] dark:hover:shadow-sky-400/10">
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-sky-500/25 to-sky-500/0 dark:from-sky-400/15 dark:to-transparent" />
+            <div className="relative flex items-center gap-4 p-5 sm:gap-6">
+              <img src="/delstar-logo.png" alt="" className="h-20 w-auto shrink-0 sm:h-24 transition duration-500 group-hover:scale-105" />
+              <div className="min-w-0 flex-1">
+                <h3 className="text-lg font-semibold font-orbitron sm:text-xl">Delstar</h3>
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">Stream and download movies &amp; series on any device, from ₦700 a month.</p>
+                <span className="mt-3 inline-flex items-center gap-1 rounded-full bg-sky-600 px-4 py-1.5 text-sm font-semibold text-white transition group-hover:bg-sky-500">
+                  Watch now <span aria-hidden="true">→</span>
+                </span>
+              </div>
+            </div>
+          </Card>
+        </a>
+
         {/* Bento Grid */}
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           {tiles.map(({ to, href, image, title, subtitle, Icon, accent, active }) => {
@@ -166,7 +195,7 @@ export default function Home() {
             <Wrapper key={to || href} {...linkProps} className="group">
               <Card className={`relative h-48 overflow-hidden transition-all duration-300 hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] dark:hover:shadow-white/10 ${active}`}>
                 <div className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${accent}`} />
-                <BannerPhoto src={photo} wide={subtitle.length <= 22} />
+                <BannerPhoto src={photo} wide={subtitle.length <= 22} tall={tallFor[to]} />
                 <CardHeader className="relative">
                   <CardTitle className="flex items-center gap-3">
                     <span
